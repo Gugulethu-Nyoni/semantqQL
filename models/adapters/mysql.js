@@ -10,8 +10,4 @@ const pool = mysql.createPool({
   database: process.env.MYSQL_DB_NAME,
 });
 
-export default {
-  query: (sql, params) => pool.execute(sql, params),
-  // Additional helper methods if needed
-};
-
+export default pool;
