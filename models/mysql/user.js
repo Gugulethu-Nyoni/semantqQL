@@ -38,10 +38,10 @@ const User = {
 
   // ADD THIS METHOD:
   async deleteUser(id) {
-    await db.query('DELETE FROM users WHERE id = ?', [id]);
-    // You might return true/false or the number of affected rows
-    return true; // Or check db.affectedRows
-  }
+  const [result] = await db.query('DELETE FROM users WHERE id = ?', [id]);
+  // result object for DELETE operations often contains affectedRows
+  return result.affectedRows > 0; // Return true if at least one row was affected, false otherwise
+}
 };
 
 export default User;

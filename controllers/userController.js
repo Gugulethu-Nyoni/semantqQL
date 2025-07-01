@@ -46,13 +46,24 @@ const userController = {
 
   async deleteUser(req, res) {
     try {
-      await userService.deleteUser(req.params.id);
-      res.status(204).end();
+      // It's good practice for the service/model to indicate if a user was actually found and deleted
+      // For example, the deleteUser model method could return true if deleted, false if not found.
+      const deleted = await userService.deleteUser(req.params.id);
+
+      // Assuming userService.deleteUser returns true if deleted, false if not found
+      if (deleted) {
+        // Change this line for an explicit success message:
+        res.status(200).json({ success: true, message: 'User deleted successfully' });
+      } else {
+        // If the user wasn't found to delete, respond with 404
+        res.status(404).json({ success: false, message: 'User not found or already deleted' });
+      }
     } catch (err) {
       console.error('💥 deleteUser error:', err);
       res.status(500).json({ success: false, message: 'Failed to delete user' });
     }
   }
+  
 };
 
 export default userController;
