@@ -1,6 +1,7 @@
 {
   "name": "semantq_server",
   "version": "1.0.0",
+  "type":"module",
   "description": "Semantq full stack backend server with modular MCSR architecture",
   "main": "server.js",
   "scripts": {
@@ -8,7 +9,8 @@
     "dev": "nodemon server.js",
     "test": "jest",
     "env:copy": "cp .env.example .env",
-    "init": "node bin/init.js"
+    "init": "node bin/init.js",
+    "migrate": "node bin/migrate.js"
   },
   "keywords": [
     "semantq",
