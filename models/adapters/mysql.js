@@ -4,13 +4,14 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const pool = mysql.createPool({
-  host: process.env.MYSQL_HOST,
-  user: process.env.MYSQL_USER,
-  password: process.env.MYSQL_PASS,
-  database: process.env.MYSQL_DB,
+  host: process.env.MYSQL_DB_HOST,
+  user: process.env.MYSQL_DB_USER,
+  password: process.env.MYSQL_DB_PASSWORD,
+  database: process.env.MYSQL_DB_NAME,
 });
 
 export default {
   query: (sql, params) => pool.execute(sql, params),
   // Additional helper methods if needed
 };
+

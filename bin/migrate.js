@@ -5,7 +5,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { exit } from 'process';
 
-import config from '../config/semantiq.config.js';
+import config from '../semantiq.config.js';
 
 // Import DB adapter connector dynamically based on adapter config
 const adapterName = config.database.adapter;
@@ -17,7 +17,7 @@ if (!adapterName) {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const migrationsDir = path.resolve(__dirname, '../models/migration_repos', adapterName);
+const migrationsDir = path.resolve(__dirname, '../models/migrations', adapterName);
 
 if (!fs.existsSync(migrationsDir)) {
   console.error(`❌ Migration directory does not exist for adapter "${adapterName}": ${migrationsDir}`);

@@ -20,7 +20,7 @@ const envExample = path.join(projectRoot, '.env.example');
 const envFile = path.join(projectRoot, '.env');
 
 const configExample = path.join(projectRoot, 'config', 'semantiq.config.example.js');
-const configFile = path.join(projectRoot, 'config', 'semantiq.config.js');
+const configFile = path.join(projectRoot, 'semantiq.config.js');
 
 try {
   copyIfNotExists(envExample, envFile);
