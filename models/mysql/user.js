@@ -1,12 +1,14 @@
 import db from '../adapters/mysql.js';
 
-export async function findUserById(id) {
-  const [rows] = await db.query('SELECT * FROM users WHERE id = ?', [id]);
-  return rows[0];
-}
+const User = {
+  async findUserById(id) {
+    const [rows] = await db.execute('SELECT * FROM users WHERE id = ?', [id]);
+    return rows[0];
+  },
+  async createUser(data) {
+    const { email, password } = data;
+    await db.execute('INSERT INTO users (email, password) VALUES (?, ?)', [email, password]);
+  }
+};
 
-export async function createUser(userData) {
-  const { name, email } = userData;
-  const [result] = await db.query('INSERT INTO users (name, email) VALUES (?, ?)', [name, email]);
-  return { id: result.insertId, name, email };
-}
+export default User;
