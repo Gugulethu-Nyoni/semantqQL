@@ -140,23 +140,243 @@ server.js     → application entry point
 
 ---
 
-## 📌 Final Notes
+## Important Notes
 
 * When deploying for production, you may add a local `.env` inside `semantq_server/` if needed, but the **project root `.env` should always be the master source**.
 * Packages/modules added into `semantq_server/packages/` must follow the MCSR structure to be auto-loaded.
 
+
+## CRUD Implementation with MCSR Pattern
+
+### Overview of MCSR
+
+Semantq Server follows a clean **MCSR architecture** pattern for structuring API functionality:
+
+* **M**odel — direct interaction with the database (raw queries)
+* **C**ontroller — handles HTTP request and response logic
+* **S**ervice — business logic layer, interacts with models
+* **R**oute — defines API endpoints and assigns controllers to handle them
+
 ---
 
-## 📖 Example CLI Install Plan (Coming Soon)
+## 📑 CRUD Implementation Steps
 
-```bash
-semantq install:server
-cd semantq_server
-npm install
-npm run env:copy
-npm run init
-npm run migrate
-npm run dev
+We already covered database migrations earlier.
+Now let’s break down CRUD implementation in **MCSR order** — starting with the **Route**, down to the **Model**:
+
+---
+
+### 1️⃣ Create a Route
+
+Routes live in the `/routes/` directory.
+
+**File:** `routes/userRoutes.js`
+
+```javascript
+import express from 'express';
+import userController from '../controllers/userController.js';
+
+const router = express.Router();
+
+router.get('/users', userController.getAllUsers);
+router.get('/users/:id', userController.getUserById);
+router.post('/users', userController.createUser);
+router.put('/users/:id', userController.updateUser);
+router.delete('/users/:id', userController.deleteUser);
+
+export default router;
+```
+
+**➡️ Why first?**
+Setting up routes early lets you map your planned API structure cleanly and drive what controllers need to exist.
+
+---
+
+###  2️⃣ Create the Controller
+
+Controllers handle incoming HTTP requests, call services, and return responses.
+
+**File:** `controllers/userController.js`
+
+```javascript
+import userService from '../services/userService.js';
+
+const userController = {
+  async getAllUsers(req, res) {
+    const users = await userService.getAllUsers();
+    res.json({ success: true, data: users });
+  },
+  async getUserById(req, res) {
+    const user = await userService.getUserById(req.params.id);
+    res.json({ success: true, data: user });
+  },
+  async createUser(req, res) {
+    const newUser = await userService.createUser(req.body);
+    res.status(201).json({ success: true, data: newUser });
+  },
+  async updateUser(req, res) {
+    const updatedUser = await userService.updateUser(req.params.id, req.body);
+    res.json({ success: true, data: updatedUser });
+  },
+  async deleteUser(req, res) {
+    await userService.deleteUser(req.params.id);
+    res.status(204).end();
+  }
+};
+
+export default userController;
 ```
 
 ---
+
+### 3️⃣ Create the Service
+
+Services handle business logic and act as a bridge between controllers and models.
+
+**File:** `services/userService.js`
+
+```javascript
+import models from '../models/index.js';
+
+const userService = {
+  async getAllUsers() {
+    return await models.User.findAllUsers();
+  },
+  async getUserById(id) {
+    return await models.User.findUserById(id);
+  },
+  async createUser(data) {
+    return await models.User.createUser(data);
+  },
+  async updateUser(id, data) {
+    return await models.User.updateUser(id, data);
+  },
+  async deleteUser(id) {
+    return await models.User.deleteUser(id);
+  }
+};
+
+export default userService;
+```
+
+**➡️ Why third?**
+Services allow you to encapsulate app logic separately from HTTP handling or DB logic — keeping things modular and clean.
+
+---
+
+### 4️⃣ Create the Model
+
+Models handle direct database access using raw SQL or an ORM.
+
+**File:** `models/mysql/User.js`
+
+```javascript
+import { v4 as uuidv4 } from 'uuid';
+import db from '../adapters/mysql.js';
+
+const User = {
+  async findAllUsers() {
+    const [rows] = await db.query('SELECT * FROM users');
+    return rows;
+  },
+  async findUserById(id) {
+    const [rows] = await db.query('SELECT * FROM users WHERE id = ?', [id]);
+    return rows[0];
+  },
+  async createUser(data) {
+    const { email, password } = data;
+    const uuid = uuidv4();
+    await db.query(
+      'INSERT INTO users (uuid, email, password_hash) VALUES (?, ?, ?)',
+      [uuid, email, password]
+    );
+    const [rows] = await db.query('SELECT * FROM users WHERE uuid = ?', [uuid]);
+    return rows[0];
+  },
+  async updateUser(id, data) {
+    const { email, password, name } = data;
+    await db.query(
+      'UPDATE users SET email = ?, password_hash = ?, name = ? WHERE id = ?',
+      [email, password, name, id]
+    );
+    const [rows] = await db.query('SELECT * FROM users WHERE id = ?', [id]);
+    return rows[0];
+  },
+  async deleteUser(id) {
+    await db.query('DELETE FROM users WHERE id = ?', [id]);
+    return true;
+  }
+};
+
+export default User;
+```
+
+---
+
+## 📦 Recap Flow
+
+✔️ **Route** calls →
+✔️ **Controller** calls →
+✔️ **Service** calls →
+✔️ **Model** interacts with DB
+
+Each layer stays clean and single-responsibility.
+
+---
+
+## 📁 Folder Structure
+
+```bash
+routes/
+  userRoutes.js
+controllers/
+  userController.js
+services/
+  userService.js
+models/
+  mysql/
+    User.js
+```
+
+---
+
+## 📌 Testing CRUD via `curl`
+
+You can run curl api calls on the terminal or use Postman to test this server. 
+Example calls:
+
+**Create User**
+
+```bash
+curl -X POST http://localhost:3000/user/users \
+  -H "Content-Type: application/json" \
+  -d '{"email":"test@example.com","password":"abc123"}'
+```
+
+**Get User**
+
+```bash
+curl -X GET http://localhost:3000/user/users/1
+```
+
+**Update User**
+
+```bash
+curl -X PUT http://localhost:3000/user/users/1 \
+  -H "Content-Type: application/json" \
+  -d '{"email":"updated@example.com","password":"newpass","name":"Updated Name"}'
+```
+
+**Delete User**
+
+```bash
+curl -X DELETE http://localhost:3000/user/users/1
+```
+
+---
+
+## ✅ Done.
+
+**Result:**
+A clean, modular, scalable CRUD API implementation on **Semantq Server** using the **MCSR pattern**.
+
