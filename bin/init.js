@@ -1,37 +1,32 @@
-#!/usr/bin/env node
-
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
 
-const rootEnvPath = path.resolve(process.cwd(), '../.env');
-const localEnvPath = path.resolve(process.cwd(), '.env');
-const exampleEnvPath = path.resolve(process.cwd(), '.env.example');
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-function copyEnvFile(targetPath) {
-  if (!fs.existsSync(exampleEnvPath)) {
-    console.error('❌ .env.example file not found in semantq_server');
-    process.exit(1);
-  }
-  fs.copyFileSync(exampleEnvPath, targetPath);
-  console.log(`✅ Copied .env.example to ${targetPath}`);
-}
-
-function main() {
-  // Detect root package.json as heuristic for root dir
-  const rootPackageJson = path.resolve(process.cwd(), '../package.json');
-  const isRootProject = fs.existsSync(rootPackageJson);
-
-  if (fs.existsSync(rootEnvPath)) {
-    console.log('✅ Found .env in project root, no action needed');
-  } else if (fs.existsSync(localEnvPath)) {
-    console.log('✅ Found .env in semantq_server, no action needed');
+function copyIfNotExists(src, dest) {
+  if (!fs.existsSync(dest)) {
+    fs.copyFileSync(src, dest);
+    console.log(`Created ${dest} from template.`);
   } else {
-    if (isRootProject) {
-      copyEnvFile(rootEnvPath);
-    } else {
-      copyEnvFile(localEnvPath);
-    }
+    console.log(`${dest} already exists.`);
   }
 }
 
-main();
+const projectRoot = path.resolve(__dirname, '..');
+
+const envExample = path.join(projectRoot, '.env.example');
+const envFile = path.join(projectRoot, '.env');
+
+const configExample = path.join(projectRoot, 'config', 'semantiq.config.example.js');
+const configFile = path.join(projectRoot, 'config', 'semantiq.config.js');
+
+try {
+  copyIfNotExists(envExample, envFile);
+  copyIfNotExists(configExample, configFile);
+  console.log('Initialization complete.');
+} catch (err) {
+  console.error('Error during initialization:', err);
+  process.exit(1);
+}

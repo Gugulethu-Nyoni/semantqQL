@@ -6,6 +6,6 @@ export default {
   },
   packages: {
     autoMount: true,        // enables automatic package detection
-    dir: './server/packages'
+    dir: './packages'
   }
 };
