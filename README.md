@@ -1,149 +1,162 @@
-# semantq_server
-Nodejs based backend server for Semantq full stack JS Framework 
+## 📦 `semantq_server` Backend
 
+### Introduction
 
+**`semantq_server`** is a swift, modern, **Node.js backend framework** built on **Express.js**.
+Although framework-agnostic, it’s purposefully designed to complement and power the **Semantq JavaScript full-stack framework**.
 
+It ships with:
 
+* **CRUD-ready scaffolds**
+* Modular **MCSR pattern** (Models, Controllers, Services, Routes)
+* Out-the-box **multi-adapter database support**:
 
-Excellent — you’re asking precisely the kind of architectural question that determines whether a framework lives or dies in real dev ecosystems. Let’s unpack this carefully and propose a clean, dev-friendly, futureproof convention.
-
----
-
-## 📦 📂 Real-world Project Structure & Relationship
-
-```plaintext
-myapp/
-├── .env                       # Main app env
-├── semantq.config.js          # Main app config
-├── package.json
-├── frontend/                  # (Vite-based app or any front end)
-└── semantq_server/            # Optional Semantq backend (this repo)
-    ├── server.js
-    ├── models/
-    ├── services/
-    ├── ...
-    └── .env                  # Local env overrides (if any — ideally minimal)
-```
+  * **MySQL**
+  * **Supabase**
+  * **MongoDB**
+  * **SQLite**
+* Elegant **migration runner** for database schema management
+* Seamless **package/module auto-loading system** for extending functionality with minimal setup
 
 ---
 
-## 📌 Core Principles We Want to Enforce:
+## Installation
 
-✅ **Single Source of Truth for Config**
-→ `myapp/.env` and `myapp/semantq.config.js` are primary.
-→ `semantq_server/` reads from project root `.env` and `semantq.config.js`.
+In a real-world project structure:
 
-✅ **Plug-and-Play Package Install**
-→ When a package is installed into `semantq_server/packages/` it should declare:
+* Your **project root** (e.g. `myapp/`)
+* `semantq_server` will sit inside your project as:
+  `myapp/semantq_server/`
 
-* Any config keys it needs.
-* Optional `.env` keys it expects.
-
-✅ **Zero-Friction Setup**
-→ Provide a `semantq_server/bin/init.js` CLI tool to:
-
-* Check for existence of root `.env` and `semantq.config.js`.
-* Inject missing keys.
-* Optionally copy template `.env.example` keys for packages into root `.env`.
-
----
-
-## 📄 Example semantq\_server/config/env.js
-
-```javascript
-import * as dotenv from 'dotenv';
-import { resolve } from 'path';
-import { fileURLToPath } from 'url';
-
-// Resolve root dir
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = resolve(__filename, '../../');
-
-// Load root .env
-dotenv.config({ path: resolve(__dirname, '../.env') });
-dotenv.config({ path: resolve(__dirname, '../../.env') }); // attempt parent project root
-
-export const getEnvVar = (key, fallback = undefined) => {
-  return process.env[key] || fallback;
-};
-```
-
-✅ This way semantq\_server can safely work standalone for testing **or** under `myapp/`.
-
----
-
-## 📦 Package Config Conventions
-
-Each Semantq-compatible package **must include a `semantq-module` flag in its package.json** and optionally a `semantq-config.example.js` and `.env.example`.
-
-**Example semantq-auth/package.json**
-
-```json
-{
-  "name": "semantq-auth",
-  "version": "1.0.0",
-  "semantq-module": true,
-  "main": "index.js"
-}
-```
-
-**Example semantq-auth/.env.example**
-
-```ini
-JWT_SECRET=changeme
-EMAIL_API_KEY=putyours
-```
-
-**Example semantq-auth/semantq-config.example.js**
-
-```javascript
-export default {
-  auth: {
-    jwtSecret: 'changeme',
-    tokenExpiry: '2h'
-  }
-};
-```
-
----
-
-## 📖 Bin Utility: `semantq_server/bin/init.js`
-
-Run this once after install — it:
-
-* Detects root project’s `.env` and `semantq.config.js`.
-* Injects missing keys from semantq\_server and its packages.
-* Copies over any `.env.example` keys to project root `.env`.
-* Optionally warns about missing dependencies.
-
-**Command:**
+The install command in production-ready Semantq CLI will be:
 
 ```bash
-node semantq_server/bin/init.js
+semantq install:server
+```
+
+For now — clone or copy it manually into your project root.
+
+---
+
+## Configuration Setup
+
+After installing the server module:
+
+### 1. Copy Example Config & Env Files
+
+From inside `semantq_server/` run:
+
+```bash
+npm run env:copy
+npm run init
+```
+
+* **`.env.example`** → `.env`
+* **`semantiq.config.example.js`** → `semantiq.config.js`
+
+These files contain **example credentials and configuration keys** you must review and adjust for your environment.
+
+**⚠️ Critical: Ensure both `.env` and `semantiq.config.js` exist and have valid config before proceeding.**
+The server relies on these files to:
+
+* Determine active DB adapter
+* Load database connection credentials
+* Load environment settings
+
+---
+
+## 📑 Running Migrations
+
+
+**📌 Migration Templates**
+
+We’ve provided **template migration sample files** inside:
+
+```
+models/migration_repos/name_of_db_adapter e.g. models/migration_repos/mysql
+```
+
+To activate them:
+
+* **Copy the relevant migration files** from `models/migration_repos/<adapter>/`
+  **to**
+  `models/migrations/<adapter>/`
+
+**Example:**
+To set up MySQL migrations:
+
+```bash
+cp models/migration_repos/mysql/* models/migrations/mysql/
+```
+
+Do the same based on your specified db adaper e.g. `supabase/`, `mongodb/`, or `sqlite/` as needed.
+
+**ℹ️ Note:** Only files inside `models/migrations/<adapter>/` are picked up and executed by the migration runner.
+
+
+
+Run database migrations based on the adapter you selected in `semantiq.config.js`:
+
+```bash
+npm run migrate
+```
+
+* Automatically detects the adapter (e.g. `mysql`, `supabase`)
+* Runs all pending migrations from:
+
+  ```
+  semantq_server/models/migrations/<adapter>/
+  ```
+* Tracks applied migrations in a `migrations` table
+
+---
+
+## 🛠️ Development Commands
+
+| Command            | Description                                |
+| :----------------- | :----------------------------------------- |
+| `npm run dev`      | Start server in development mode (nodemon) |
+| `npm start`        | Start server normally                      |
+| `npm run env:copy` | Copy `.env.example` to `.env`              |
+| `npm run init`     | Copy config example file if missing        |
+| `npm run migrate`  | Run pending DB migrations                  |
+
+---
+
+## 📦 Architecture (MCSR Pattern)
+
+**Core Semantq Server follows a clean MCSR pattern**:
+
+```
+models/       → data models + adapter connectors + migrations  
+services/     → pure business logic  
+controllers/  → API endpoint handlers  
+routes/       → Express routes mounting controllers  
+packages/     → plug-and-play Semantq-compatible modules  
+config/       → environment and Semantq config files  
+lib/          → core utilities and package auto-loader  
+server.js     → application entry point  
 ```
 
 ---
 
-## ✅ Recap: What This Gives Us
+## 📌 Final Notes
 
-| Feature                              | Outcome                                                     |
-| :----------------------------------- | :---------------------------------------------------------- |
-| **Project root owns config/env**     | One place to manage env & config.                           |
-| **Semantq\_server reads from root**  | Works under `myapp/` or standalone.                         |
-| **Packages declare dependencies**    | Packages cleanly state what env/config they need.           |
-| **Auto-setup CLI utility**           | New installs frictionlessly integrate.                      |
-| **Optional package-level overrides** | Possible by adding a package-specific config merge routine. |
+* When deploying for production, you may add a local `.env` inside `semantq_server/` if needed, but the **project root `.env` should always be the master source**.
+* Packages/modules added into `semantq_server/packages/` must follow the MCSR structure to be auto-loaded.
 
 ---
 
-## 📌 Next Steps
+## 📖 Example CLI Install Plan (Coming Soon)
 
-1. ✅ Formalize package.json conventions.
-2. ✅ Write `bin/init.js`.
-3. ✅ Update env loader to resolve from parent project.
-4. ✅ Design package loader to auto-apply config + env merging if packages require it.
-5. ✅ Test by installing a package into semantq\_server/packages/
+```bash
+semantq install:server
+cd semantq_server
+npm install
+npm run env:copy
+npm run init
+npm run migrate
+npm run dev
+```
 
 ---
-
-Would you like me to quickly draft the `bin/init.js` utility logic for you now? ⚡
