@@ -1,6 +1,7 @@
 {
   "name": "semantq-api-proxy",
   "version": "1.0.0",
+  "type":"module",
   "description": "A Semantq module to proxy outbound API calls.",
   "semantiq-module": true,
   "main": "index.js",
