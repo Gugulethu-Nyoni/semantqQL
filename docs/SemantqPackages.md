@@ -3,7 +3,7 @@
 This guide outlines the recommended directory and file structure for creating a package designed to seamlessly integrate with the `semantq_server`.
 Adhering to this pattern ensures your module is automatically discovered, its routes mounted, and its dependencies managed by the main server.
 
----
+
 
 ## 📖 Core Principles
 
@@ -13,7 +13,7 @@ Adhering to this pattern ensures your module is automatically discovered, its ro
 * **`semantiq-module` Flag:** The package's `package.json` must explicitly declare itself as a Semantq module.
 * **Clear Naming:** Use consistent and descriptive naming conventions for files and directories.
 
----
+
 ```bash
 my-semantq-package/
 ├── package.json               # REQUIRED: Package metadata, dependencies, and 'semantiq-module' flag
@@ -53,7 +53,7 @@ my-semantq-package/
     ├── services/
     └── models/
 ```
----
+
 
 ## 📄 Key Files and Their Contents
 
@@ -85,7 +85,7 @@ This file is crucial for discovery and dependency management.
 }
 ```
 
----
+
 
 ### `routes/myFeatureRoutes.js` (REQUIRED)
 
@@ -103,7 +103,7 @@ router.post('/my-feature', myFeatureController.createFeature);
 export default router;
 ```
 
----
+
 
 ### `controllers/myFeatureController.js`
 
@@ -130,7 +130,7 @@ const myFeatureController = {
 export default myFeatureController;
 ```
 
----
+
 
 ### `services/myFeatureService.js`
 
@@ -153,7 +153,7 @@ const myFeatureService = {
 export default myFeatureService;
 ```
 
----
+
 
 ### `models/myFeatureModel.js`
 
@@ -180,7 +180,7 @@ const MyFeature = {
 export default MyFeature;
 ```
 
----
+
 
 ## 🚀 How This Structure Enables Seamless Integration
 
@@ -190,7 +190,7 @@ export default MyFeature;
 * **Internal Module Paths:** Using relative paths within the package ensures internal components resolve correctly.
 * **Dependency Management:** Dependencies listed in the module’s `package.json` are automatically installed during `npm run install:module`.
 
----
+
 
 ## ✅ Summary
 
