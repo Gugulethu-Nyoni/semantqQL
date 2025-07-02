@@ -380,3 +380,6 @@ curl -X DELETE http://localhost:3000/user/users/1
 **Result:**
 A clean, modular, scalable CRUD API implementation on **Semantq Server** using the **MCSR pattern**.
 
+
+
+
