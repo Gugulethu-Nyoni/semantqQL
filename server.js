@@ -3,34 +3,33 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import path from 'path';
+import { fileURLToPath } from 'url';
 import { loadRoutes } from './lib/routeLoader.js';
 import fs from 'fs';
 
 dotenv.config();
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
-const PORT = process.env.PORT || 3002;
+const PORT = process.env.PORT || 3003;
 
 app.use(cors());
 app.use(bodyParser.json());
 
-// Health check
 app.get('/', (req, res) => {
   res.json({ status: 'Semantq Server is running' });
 });
 
-// Make this an async IIFE to properly handle async/await
 (async () => {
   try {
-    // Load core routes
-    const coreRoutesPath = path.resolve('./routes');
+    const coreRoutesPath = path.resolve(__dirname, 'routes');
     await loadRoutes(app, coreRoutesPath);
 
-    // Load package/module routes dynamically
-    const packagesPath = path.resolve('./packages');
+    const packagesPath = path.resolve(__dirname, 'packages');
     if (fs.existsSync(packagesPath)) {
       const packages = fs.readdirSync(packagesPath);
-
       for (const pkgName of packages) {
         const pkgRoutesPath = path.join(packagesPath, pkgName, 'routes');
         if (fs.existsSync(pkgRoutesPath)) {
