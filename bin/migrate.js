@@ -3,9 +3,10 @@
 import { fileURLToPath } from 'url';
 import path from 'path';
 import fs from 'fs/promises';
-import { discoverSemantqModules } from '../lib/moduleLoader.js'; // Import the new helper
-import config from '../config/semantiq.config.js'; // Assuming this holds your active DB adapter
-import { default as getDbAdapter } from '../models/adapters/index.js'; // Assuming you have an index.js that exports the selected adapter
+import { discoverSemantqModules } from '../lib/moduleLoader.js';
+import config from '../config/semantiq.config.js';
+import { default as getDbAdapter } from '../models/adapters/index.js';
+import { pathToFileURL } from 'url'; // Ensure pathToFileURL is imported for dynamic imports
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,9 +37,7 @@ async function runMigrations() {
 
   let db;
   try {
-    // Dynamically import the selected database adapter's connection logic
-    // Assuming getDbAdapter() returns the initialized DB connection
-    db = getDbAdapter(dbAdapterName);
+    db = await getDbAdapter(dbAdapterName); // Await the getDbAdapter call
     if (!db) {
       throw new Error(`Could not load database adapter for: ${dbAdapterName}`);
     }
@@ -55,7 +54,7 @@ async function runMigrations() {
   if (await pathExists(coreMigrationsPath)) {
     const files = await fs.readdir(coreMigrationsPath);
     for (const file of files) {
-      if (file.endsWith('.js') || file.endsWith('.sql')) { // Support .js and .sql migrations
+      if (file.endsWith('.js') || file.endsWith('.sql')) {
         allMigrationFiles.push({
           name: file,
           path: path.join(coreMigrationsPath, file),
@@ -70,7 +69,8 @@ async function runMigrations() {
   // 2. Collect migrations from installed Semantq modules
   const modules = await discoverSemantqModules();
   for (const module of modules) {
-    const moduleMigrationsPath = path.join(module.path, 'migrations', dbAdapterName);
+    // Corrected path to include 'models' subdirectory for module migrations
+    const moduleMigrationsPath = path.join(module.path, 'models', 'migrations', dbAdapterName);
     if (await pathExists(moduleMigrationsPath)) {
       const files = await fs.readdir(moduleMigrationsPath);
       for (const file of files) {
@@ -103,32 +103,28 @@ async function runMigrations() {
     console.log(`  ▶️ Running migration: ${migration.name} (${migration.source})`);
     try {
       if (migration.name.endsWith('.js')) {
-        // Dynamically import and run JS migration
         const migrationModule = await import(pathToFileURL(migration.path).href);
         if (migrationModule.up && typeof migrationModule.up === 'function') {
-          await migrationModule.up(db); // Pass the db connection to the migration
+          await migrationModule.up(db);
           console.log(`  ✅ Successfully ran JS migration: ${migration.name}`);
         } else {
           console.warn(`  ⚠️ JS migration '${migration.name}' does not export an 'up' function. Skipping.`);
         }
       } else if (migration.name.endsWith('.sql')) {
-        // Read and run SQL migration
         const sql = await fs.readFile(migration.path, 'utf8');
-        // This assumes your db adapter has a generic query method that can execute raw SQL
-        await db.query(sql); // Adjust based on your db adapter's raw query method
+        await db.query(sql); // Assuming your db adapter has a generic query method that can execute raw SQL
         console.log(`  ✅ Successfully ran SQL migration: ${migration.name}`);
       }
     } catch (err) {
       console.error(`  ❌ Failed to run migration: ${migration.name}`);
       console.error(err);
       console.error('Migration failed. Aborting further migrations.');
-      process.exit(1); // Exit on first migration failure
+      process.exit(1);
     }
   }
 
   console.log('\n🎉 All migrations completed successfully!');
-  // Consider closing DB connection if it's not managed by the main app lifecycle
-  if (db && typeof db.end === 'function') { // Example for mysql2 connection.
+  if (db && typeof db.end === 'function') {
       await db.end();
   }
 }
