@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -14,13 +15,18 @@ function copyIfNotExists(src, dest) {
   }
 }
 
-const projectRoot = path.resolve(__dirname, '..');
+// Corrected projectRoot for `semantq_server`
+// If init.js is in semantq_server/bin, then '..' takes it to semantq_server
+// And '..' again would take it to the parent of semantq_server
+// If projectRoot needs to be the semantq_server directory itself:
+const projectRoot = path.resolve(__dirname, '..'); // This means semantq_server directory
 
 const envExample = path.join(projectRoot, '.env.example');
 const envFile = path.join(projectRoot, '.env');
 
+// Assuming config and semantiq.config.example.js are inside semantq_server/config
 const configExample = path.join(projectRoot, 'config', 'semantiq.config.example.js');
-const configFile = path.join(projectRoot, 'semantiq.config.js');
+const configFile = path.join(projectRoot, 'semantiq.config.js'); // This will create it in semantq_server/semantiq.config.js
 
 try {
   copyIfNotExists(envExample, envFile);
