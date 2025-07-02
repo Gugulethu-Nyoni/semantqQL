@@ -18,7 +18,6 @@ It ships with:
 * Elegant **migration runner** for database schema management
 * Seamless **package/module auto-loading system** for extending functionality with minimal setup
 
----
 
 ## Installation
 
@@ -36,7 +35,6 @@ semantq install:server
 
 For now — clone or copy it manually into your project root.
 
----
 
 ## Configuration Setup
 
@@ -63,7 +61,6 @@ The server relies on these files to:
 * Load database connection credentials
 * Load environment settings
 
----
 
 ## 📑 Running Migrations
 
@@ -109,7 +106,6 @@ npm run migrate
   ```
 * Tracks applied migrations in a `migrations` table
 
----
 
 ## 🛠️ Development Commands
 
@@ -121,7 +117,6 @@ npm run migrate
 | `npm run init`     | Copy config example file if missing        |
 | `npm run migrate`  | Run pending DB migrations                  |
 
----
 
 ## 📦 Architecture (MCSR Pattern)
 
@@ -138,7 +133,6 @@ lib/          → core utilities and package auto-loader
 server.js     → application entry point  
 ```
 
----
 
 ## Important Notes
 
@@ -157,14 +151,11 @@ Semantq Server follows a clean **MCSR architecture** pattern for structuring API
 * **S**ervice — business logic layer, interacts with models
 * **R**oute — defines API endpoints and assigns controllers to handle them
 
----
-
 ## 📑 CRUD Implementation Steps
 
 We already covered database migrations earlier.
 Now let’s break down CRUD implementation in **MCSR order** — starting with the **Route**, down to the **Model**:
 
----
 
 ### 1️⃣ Create a Route
 
@@ -190,7 +181,6 @@ export default router;
 **➡️ Why first?**
 Setting up routes early lets you map your planned API structure cleanly and drive what controllers need to exist.
 
----
 
 ###  2️⃣ Create the Controller
 
@@ -227,7 +217,6 @@ const userController = {
 export default userController;
 ```
 
----
 
 ### 3️⃣ Create the Service
 
@@ -262,7 +251,6 @@ export default userService;
 **➡️ Why third?**
 Services allow you to encapsulate app logic separately from HTTP handling or DB logic — keeping things modular and clean.
 
----
 
 ### 4️⃣ Create the Model
 
@@ -311,7 +299,6 @@ const User = {
 export default User;
 ```
 
----
 
 ## 📦 Recap Flow
 
@@ -322,7 +309,7 @@ export default User;
 
 Each layer stays clean and single-responsibility.
 
----
+
 
 ## 📁 Folder Structure
 
@@ -338,7 +325,7 @@ models/
     User.js
 ```
 
----
+
 
 ## 📌 Testing CRUD via `curl`
 
@@ -373,7 +360,6 @@ curl -X PUT http://localhost:3000/user/users/1 \
 curl -X DELETE http://localhost:3000/user/users/1
 ```
 
----
 
 ## 📚 API and Packages Documentation
 
