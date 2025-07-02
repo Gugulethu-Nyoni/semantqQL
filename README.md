@@ -375,10 +375,11 @@ curl -X DELETE http://localhost:3000/user/users/1
 
 ---
 
-## ✅ Done.
+## 📚 API and Packages Documentation
 
-**Result:**
-A clean, modular, scalable CRUD API implementation on **Semantq Server** using the **MCSR pattern**.
+- [📖 Semantq API Reference](docs/SemantqApi.md)
+- [📦 Semantq Packages Guide](docs/SemantqPackages.md)
+
 
 
 
