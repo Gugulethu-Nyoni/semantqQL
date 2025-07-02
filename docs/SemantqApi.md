@@ -5,7 +5,7 @@ This guide explains how to safely and consistently route outbound API calls from
 
 > **No need to install or configure the API proxy separately** — it's baked into the Semantq server.
 
----
+
 
 ## Why Use the API Proxy?
 
@@ -15,7 +15,7 @@ This guide explains how to safely and consistently route outbound API calls from
 ✔️ **Data transformation** — Modify requests/responses server-side
 ✔️ **Decoupling** — Frontend never talks to external APIs directly
 
----
+
 
 ## How It Works
 
@@ -28,12 +28,12 @@ http://localhost:3000/semantq-api
 Inside that POST’s JSON body, you tell the proxy:
 
 | Field       | Description                             |
-| ----------- | --------------------------------------- |
+| -- |  |
 | `targetUrl` | The external API URL you want to call   |
 | `method`    | HTTP method for the external API call   |
 | `payload`   | (Optional) JSON data for POST/PUT/PATCH |
 
----
+
 
 ## Proxy Call Helper (Recommended)
 
@@ -51,7 +51,7 @@ export async function proxyApiRequest(targetUrl, method, payload = null) {
 }
 ```
 
----
+
 
 ## Usage Examples (By HTTP Method)
 
@@ -67,7 +67,7 @@ proxyApiRequest(
 ✔️ No payload needed
 ✔️ Query params go in `targetUrl`
 
----
+
 
 ### POST Request (with JSON body)
 
@@ -81,7 +81,7 @@ proxyApiRequest(
 
 ✔️ JSON body passed via `payload`
 
----
+
 
 ### PUT Request (update resource)
 
@@ -95,7 +95,7 @@ proxyApiRequest(
 
 ✔️ Updates existing record with new data
 
----
+
 
 ### PATCH Request (partial update)
 
@@ -109,7 +109,7 @@ proxyApiRequest(
 
 ✔️ Partial update payload
 
----
+
 
 ### DELETE Request
 
@@ -122,7 +122,7 @@ proxyApiRequest(
 
 ✔️ Usually no payload
 
----
+
 
 ## Example: Signup Form Integration (`signup.js`)
 
@@ -147,7 +147,7 @@ signupUser({
 });
 ```
 
----
+
 
 ## Security Reminder
 
@@ -161,19 +161,19 @@ const ALLOWED_PROXY_DOMAINS = [
 ];
 ```
 
----
+
 
 ## Summary
 
 | Action                                      | Value                               |
-| :------------------------------------------ | :---------------------------------- |
+| : | :- |
 | Proxy endpoint URL                          | `http://localhost:3000/semantq-api` |
 | Proxy HTTP method (frontend → proxy)        | `POST`                              |
 | Outbound HTTP method (proxy → external API) | `method` field in JSON body         |
 | Outbound target URL                         | `targetUrl` field in JSON body      |
 | Outbound JSON body (if needed)              | `payload` field in JSON body        |
 
----
+
 
 ## Plug & Play
 
