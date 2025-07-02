@@ -1,110 +1,136 @@
-#!/usr/bin/env node
+// semantq_server/bin/migrate.js
 
-import fs from 'fs';
-import path from 'path';
 import { fileURLToPath } from 'url';
-import { exit } from 'process';
-
-import config from '../semantiq.config.js';
-
-// Import DB adapter connector dynamically based on adapter config
-const adapterName = config.database.adapter;
-if (!adapterName) {
-  console.error('❌ No database adapter defined in semantiq.config.js under database.adapter');
-  process.exit(1);
-}
+import path from 'path';
+import fs from 'fs/promises';
+import { discoverSemantqModules } from '../lib/moduleLoader.js'; // Import the new helper
+import config from '../config/semantiq.config.js'; // Assuming this holds your active DB adapter
+import { default as getDbAdapter } from '../models/adapters/index.js'; // Assuming you have an index.js that exports the selected adapter
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const projectRoot = path.resolve(__dirname, '..');
 
-const migrationsDir = path.resolve(__dirname, '../models/migrations', adapterName);
-
-if (!fs.existsSync(migrationsDir)) {
-  console.error(`❌ Migration directory does not exist for adapter "${adapterName}": ${migrationsDir}`);
-  process.exit(1);
+/**
+ * Helper to check if a path exists (using fs.promises)
+ * @param {string} p - The path to check.
+ * @returns {Promise<boolean>}
+ */
+async function pathExists(p) {
+  try {
+    await fs.access(p);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
-async function loadAdapter() {
-  try {
-    const adapterPath = `../models/adapters/${adapterName}.js`;
-    const adapterModule = await import(adapterPath);
-    return adapterModule.default;
-  } catch (err) {
-    console.error(`❌ Failed to load adapter ${adapterName}:`, err);
+async function runMigrations() {
+  console.log('🚀 Starting database migrations...');
+
+  const dbAdapterName = config.database.adapter;
+  if (!dbAdapterName) {
+    console.error('❌ Error: No database adapter configured in config/semantiq.config.js');
     process.exit(1);
   }
-}
 
-async function getAppliedMigrations(db) {
+  let db;
   try {
-    const [rows] = await db.query('SELECT name FROM migrations');
-    return rows.map(row => row.name);
-  } catch (err) {
-    // If migrations table doesn't exist, create it
-    if (err.code === 'ER_NO_SUCH_TABLE' || err.code === '42P01') { // MySQL or Postgres error code for missing table
-      console.log('⚠️ migrations table missing, creating...');
-      await db.query(`
-        CREATE TABLE migrations (
-          id INT AUTO_INCREMENT PRIMARY KEY,
-          name VARCHAR(255) UNIQUE NOT NULL,
-          applied_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )
-      `);
-      return [];
+    // Dynamically import the selected database adapter's connection logic
+    // Assuming getDbAdapter() returns the initialized DB connection
+    db = getDbAdapter(dbAdapterName);
+    if (!db) {
+      throw new Error(`Could not load database adapter for: ${dbAdapterName}`);
     }
-    throw err;
+    console.log(`✅ Database adapter '${dbAdapterName}' loaded.`);
+  } catch (err) {
+    console.error(`❌ Error loading database adapter '${dbAdapterName}':`, err);
+    process.exit(1);
   }
-}
 
-async function runMigrationFile(db, filePath) {
-  const ext = path.extname(filePath);
-  if (ext === '.sql') {
-    // Run SQL migration
-    const sql = fs.readFileSync(filePath, 'utf8');
-    await db.query(sql);
-  } else if (ext === '.js') {
-    // Run JS migration
-    const migration = await import(filePath);
-    if (migration.up && typeof migration.up === 'function') {
-      await migration.up(db);
-    } else {
-      throw new Error(`Migration file ${filePath} missing async 'up(db)' export function`);
+  const allMigrationFiles = [];
+
+  // 1. Collect migrations from the main server's models/migrations
+  const coreMigrationsPath = path.join(projectRoot, 'models', 'migrations', dbAdapterName);
+  if (await pathExists(coreMigrationsPath)) {
+    const files = await fs.readdir(coreMigrationsPath);
+    for (const file of files) {
+      if (file.endsWith('.js') || file.endsWith('.sql')) { // Support .js and .sql migrations
+        allMigrationFiles.push({
+          name: file,
+          path: path.join(coreMigrationsPath, file),
+          source: 'core'
+        });
+      }
     }
   } else {
-    throw new Error(`Unsupported migration file type: ${filePath}`);
+    console.warn(`⚠️ No core migrations found for adapter '${dbAdapterName}' at ${coreMigrationsPath}.`);
   }
-}
 
-async function main() {
-  console.log(`🚀 Running migrations for adapter: ${adapterName}`);
-
-  const db = await loadAdapter();
-
-  const appliedMigrations = await getAppliedMigrations(db);
-
-  const migrationFiles = fs.readdirSync(migrationsDir)
-    .filter(f => f.endsWith('.sql') || f.endsWith('.js'))
-    .sort();
-
-  for (const file of migrationFiles) {
-    if (appliedMigrations.includes(file)) {
-      console.log(`✔️ Skipping already applied migration: ${file}`);
-      continue;
+  // 2. Collect migrations from installed Semantq modules
+  const modules = await discoverSemantqModules();
+  for (const module of modules) {
+    const moduleMigrationsPath = path.join(module.path, 'migrations', dbAdapterName);
+    if (await pathExists(moduleMigrationsPath)) {
+      const files = await fs.readdir(moduleMigrationsPath);
+      for (const file of files) {
+        if (file.endsWith('.js') || file.endsWith('.sql')) {
+          allMigrationFiles.push({
+            name: file,
+            path: path.join(moduleMigrationsPath, file),
+            source: `module:${module.name}`
+          });
+        }
+      }
+    } else {
+      console.warn(`⚠️ No migrations found for module '${module.name}' (adapter: ${dbAdapterName}) at ${moduleMigrationsPath}.`);
     }
+  }
 
-    console.log(`⬆️ Applying migration: ${file}`);
+  // Sort migrations by name (assuming numeric prefixes like 001_...)
+  allMigrationFiles.sort((a, b) => a.name.localeCompare(b.name));
+
+  if (allMigrationFiles.length === 0) {
+    console.log('ℹ️ No migration files found to run.');
+    return;
+  }
+
+  console.log(`\nFound ${allMigrationFiles.length} migration files for '${dbAdapterName}':`);
+  allMigrationFiles.forEach(m => console.log(`  - ${m.name} (${m.source})`));
+  console.log('\nRunning migrations...');
+
+  for (const migration of allMigrationFiles) {
+    console.log(`  ▶️ Running migration: ${migration.name} (${migration.source})`);
     try {
-      await runMigrationFile(db, path.join(migrationsDir, file));
-      await db.query('INSERT INTO migrations (name) VALUES (?)', [file]);
-      console.log(`✅ Migration applied: ${file}`);
+      if (migration.name.endsWith('.js')) {
+        // Dynamically import and run JS migration
+        const migrationModule = await import(pathToFileURL(migration.path).href);
+        if (migrationModule.up && typeof migrationModule.up === 'function') {
+          await migrationModule.up(db); // Pass the db connection to the migration
+          console.log(`  ✅ Successfully ran JS migration: ${migration.name}`);
+        } else {
+          console.warn(`  ⚠️ JS migration '${migration.name}' does not export an 'up' function. Skipping.`);
+        }
+      } else if (migration.name.endsWith('.sql')) {
+        // Read and run SQL migration
+        const sql = await fs.readFile(migration.path, 'utf8');
+        // This assumes your db adapter has a generic query method that can execute raw SQL
+        await db.query(sql); // Adjust based on your db adapter's raw query method
+        console.log(`  ✅ Successfully ran SQL migration: ${migration.name}`);
+      }
     } catch (err) {
-      console.error(`❌ Failed migration: ${file}`, err);
-      process.exit(1);
+      console.error(`  ❌ Failed to run migration: ${migration.name}`);
+      console.error(err);
+      console.error('Migration failed. Aborting further migrations.');
+      process.exit(1); // Exit on first migration failure
     }
   }
 
-  console.log('🎉 All migrations applied successfully!');
-  process.exit(0);
+  console.log('\n🎉 All migrations completed successfully!');
+  // Consider closing DB connection if it's not managed by the main app lifecycle
+  if (db && typeof db.end === 'function') { // Example for mysql2 connection.
+      await db.end();
+  }
 }
 
-main();
+runMigrations();

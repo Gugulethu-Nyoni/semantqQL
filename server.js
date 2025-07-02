@@ -3,38 +3,51 @@ import cors from 'cors';
 import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import path from 'path';
-import { fileURLToPath } from 'url';
 import { loadRoutes } from './lib/routeLoader.js';
-import fs from 'fs';
+import { discoverSemantqModules } from './lib/moduleLoader.js'; // Import the new helper
+import fs from 'fs/promises'; // Ensure fs.promises is used for consistency
 
 dotenv.config();
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
 const app = express();
-const PORT = process.env.PORT || 3003;
+const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
 
+// Health check
 app.get('/', (req, res) => {
   res.json({ status: 'Semantq Server is running' });
 });
 
+// Helper to check if a path exists (using fs.promises)
+async function pathExists(p) {
+  try {
+    await fs.access(p);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 (async () => {
   try {
-    const coreRoutesPath = path.resolve(__dirname, 'routes');
-    await loadRoutes(app, coreRoutesPath);
+    // Load core routes
+    const coreRoutesPath = path.resolve('./routes');
+    if (await pathExists(coreRoutesPath)) {
+        await loadRoutes(app, coreRoutesPath);
+    } else {
+        console.warn(`⚠️ Core routes directory not found at ${coreRoutesPath}. Skipping.`);
+    }
 
-    const packagesPath = path.resolve(__dirname, 'packages');
-    if (fs.existsSync(packagesPath)) {
-      const packages = fs.readdirSync(packagesPath);
-      for (const pkgName of packages) {
-        const pkgRoutesPath = path.join(packagesPath, pkgName, 'routes');
-        if (fs.existsSync(pkgRoutesPath)) {
-          await loadRoutes(app, pkgRoutesPath, `/${pkgName}`);
-        }
+    // Load routes from all discovered Semantq modules
+    const moduleSources = await discoverSemantqModules(); // Use the new helper
+    for (const module of moduleSources) {
+      const moduleRoutesPath = path.join(module.path, 'routes');
+      if (await pathExists(moduleRoutesPath)) {
+        await loadRoutes(app, moduleRoutesPath, `/${module.name}`);
+      } else {
+        console.warn(`⚠️ Module '${module.name}' at '${module.path}' does not have a 'routes' directory. Skipping route loading.`);
       }
     }
 
