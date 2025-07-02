@@ -175,7 +175,10 @@ const ALLOWED_PROXY_DOMAINS = [
 
 ---
 
-## Done. Plug & Play
+## Plug & Play
 
 Once Semantq Server is running, you can safely proxy all your frontend API calls this way — no CORS issues, no exposing keys, and controlled outbound traffic management.
+
+[⬅️ Back to Main Repository](../README.md)
+
 
