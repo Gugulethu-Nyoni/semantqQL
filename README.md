@@ -33,8 +33,7 @@ The install command in production-ready Semantq CLI will be:
 semantq install:server
 ```
 
-For now — clone or copy it manually into your project root.
-
+This will clone the semantq_server repo to the root of your app e.g. myapp/semantq_server
 
 ## Configuration Setup
 
