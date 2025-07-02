@@ -202,6 +202,5 @@ npm run install:module <package-name>
 
 — will be automatically discovered, mounted, and integrated into your `semantq_server` environment.
 
----
+[⬅️ Back to Main Repository](../README.md)
 
-Would you like me to generate a `README.md` file version you can drop into your repo directly too? 🚀
