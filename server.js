@@ -4,13 +4,21 @@ import bodyParser from 'body-parser';
 import dotenv from 'dotenv';
 import path from 'path';
 import { loadRoutes } from './lib/routeLoader.js';
-import { discoverSemantqModules } from './lib/moduleLoader.js'; // Import the new helper
-import fs from 'fs/promises'; // Ensure fs.promises is used for consistency
+import { discoverSemantqModules } from './lib/moduleLoader.js';
+import fs from 'fs/promises';
+
+// --- IMPORTANT CHANGE HERE ---
+import { fileURLToPath } from 'url'; // Import fileURLToPath
+
+// Get the directory name of the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// --- END IMPORTANT CHANGE ---
 
 dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 3003;
 
 app.use(cors());
 app.use(bodyParser.json());
@@ -33,15 +41,18 @@ async function pathExists(p) {
 (async () => {
   try {
     // Load core routes
-    const coreRoutesPath = path.resolve('./routes');
+    // --- IMPORTANT CHANGE HERE ---
+    const coreRoutesPath = path.resolve(__dirname, 'routes'); // Use __dirname
+    // --- END IMPORTANT CHANGE ---
+
     if (await pathExists(coreRoutesPath)) {
-        await loadRoutes(app, coreRoutesPath);
+      await loadRoutes(app, coreRoutesPath);
     } else {
-        console.warn(`⚠️ Core routes directory not found at ${coreRoutesPath}. Skipping.`);
+      console.warn(`⚠️ Core routes directory not found at ${coreRoutesPath}. Skipping.`);
     }
 
     // Load routes from all discovered Semantq modules
-    const moduleSources = await discoverSemantqModules(); // Use the new helper
+    const moduleSources = await discoverSemantqModules();
     for (const module of moduleSources) {
       const moduleRoutesPath = path.join(module.path, 'routes');
       if (await pathExists(moduleRoutesPath)) {
