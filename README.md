@@ -39,8 +39,50 @@ This will clone the semantq_server repo to the root of your app e.g. myapp/seman
 
 After installing the server module:
 
-### 1. Copy Example Config & Env Files
+### 1. Initialising the server 
 
+Use the commands below to into the server directory to initialise it. 
+
+```bash
+cd semantq_server
+npm run init
+```
+
+In the Semantq project context `npm run init` will pick up existence of .env and semantq.config.js in your Semantq project root and you're sorted.
+
+You just need to add this to your semantqproject/semantq.config.js:
+
+```bash
+export default {
+  // other configs here
+  someConfigs: {
+
+
+  },  
+// add these configs for the server 
+  database: {
+    adapter: 'mysql' // or 'supabase' | 'mongodb' | 'sqlite'
+  },
+  server: {
+    port: 3002
+  },
+  packages: {
+    autoMount: true
+  }
+/// end of server configs
+
+};
+```
+
+
+**Note** If you are deploying the server as a stand alone (outside the Semantq JS Framework) you will need to run this command:
+
+```bash
+npm run env:copy
+```
+
+
+This will copy example config & Env files
 From inside `semantq_server/` run:
 
 ```bash
@@ -53,7 +95,7 @@ npm run init
 
 These files contain **example credentials and configuration keys** you must review and adjust for your environment.
 
-**⚠️ Critical: Ensure both `.env` and `semantiq.config.js` exist and have valid config before proceeding.**
+**⚠️ Critical: Ensure both `.env` and `semantiq.config.js` exist and have valid configs before proceeding.**
 The server relies on these files to:
 
 * Determine active DB adapter
