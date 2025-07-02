@@ -4,7 +4,14 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(__filename); // This is /myapp/semantq_server/bin
+
+// Path to the 'semantq_server' directory itself (parent of 'bin')
+const semantqServerDir = path.resolve(__dirname, '..'); // This is /myapp/semantq_server
+
+// Path to the overall project root (parent of 'semantq_server')
+// This is two levels up from 'bin', or one level up from 'semantq_serverDir'
+const containingProjectRoot = path.resolve(__dirname, '..', '..'); // This is /myapp/
 
 function copyIfNotExists(src, dest) {
   if (!fs.existsSync(dest)) {
@@ -15,18 +22,17 @@ function copyIfNotExists(src, dest) {
   }
 }
 
-// Corrected projectRoot for `semantq_server`
-// If init.js is in semantq_server/bin, then '..' takes it to semantq_server
-// And '..' again would take it to the parent of semantq_server
-// If projectRoot needs to be the semantq_server directory itself:
-const projectRoot = path.resolve(__dirname, '..'); // This means semantq_server directory
+// --- MODIFIED LINE FOR .env FILE ---
+// We want .env to be copied to the containing project root (e.g., /myapp/.env)
+const envExample = path.join(semantqServerDir, '.env.example'); // .env.example is inside semantq_server
+const envFile = path.join(containingProjectRoot, '.env'); // .env goes to the containing project root
+// --- END MODIFIED LINE ---
 
-const envExample = path.join(projectRoot, '.env.example');
-const envFile = path.join(projectRoot, '.env');
+// For semantiq.config.js, we assume it's copied into the semantq_server directory itself
+// This is consistent with config_loader's fallback logic.
+const configExample = path.join(semantqServerDir, 'config', 'semantiq.config.example.js');
+const configFile = path.join(semantqServerDir, 'semantiq.config.js');
 
-// Assuming config and semantiq.config.example.js are inside semantq_server/config
-const configExample = path.join(projectRoot, 'config', 'semantiq.config.example.js');
-const configFile = path.join(projectRoot, 'semantiq.config.js'); // This will create it in semantq_server/semantiq.config.js
 
 try {
   copyIfNotExists(envExample, envFile);
