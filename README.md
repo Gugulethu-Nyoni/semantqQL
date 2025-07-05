@@ -5,7 +5,7 @@
 **`semantq_server`** is a swift, modern, **Node.js backend framework** built on **Express.js**.
 Although framework-agnostic, it’s purposefully designed to complement and power the **Semantq JavaScript full-stack framework**.
 
-It ships with:
+It ships with the following:
 
 * **CRUD-ready scaffolds**
 * Modular **MCSR pattern** (Models, Controllers, Services, Routes)
