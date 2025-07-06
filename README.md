@@ -61,7 +61,7 @@ export default {
   },  
 // add these configs for the server 
   database: {
-    adapter: 'mysql' // or 'supabase' | 'mongodb' | 'sqlite'
+    adapter: 'supabase' // or 'mysql' | 'mongodb' | 'sqlite'
   },
   server: {
     port: 3002
