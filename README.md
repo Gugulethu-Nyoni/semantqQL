@@ -83,6 +83,7 @@ npm run env:copy
 
 
 This will copy example config & Env files
+
 From inside `semantq_server/` run:
 
 ```bash
@@ -131,6 +132,7 @@ Do the same based on your specified db adaper e.g. `supabase/`, `mongodb/`, or `
 
 **ℹ️ Note:** Only files inside `models/migrations/<adapter>/` are picked up and executed by the migration runner.
 
+**Note** For Supabase, you will need to copy the sample migrations and modify them according to your needs or create new ones, following the standard Supabase migration format and location. You can copy the provided templates into your project’s supabase/migrations directory.
 
 
 Run database migrations based on the adapter you selected in `semantiq.config.js`:
