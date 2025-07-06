@@ -23,7 +23,7 @@ It ships with the following:
 
 In a real-world project structure:
 
-* Your **project root** (e.g. `myapp/`)
+* Your **Semantq project root** (e.g. `myapp/`)
 * `semantq_server` will sit inside your project as:
   `myapp/semantq_server/`
 
