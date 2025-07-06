@@ -13,8 +13,8 @@ It ships with the following:
 
   * **MySQL**
   * **Supabase**
-  * **MongoDB**
-  * **SQLite**
+  * **MongoDB** - to be added 
+  * **SQLite**  - to be added
 * Elegant **migration runner** for database schema management
 * Seamless **package/module auto-loading system** for extending functionality with minimal setup
 
