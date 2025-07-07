@@ -350,7 +350,7 @@ export default User;
 ✔️ **Service** calls →
 ✔️ **Model** interacts with DB
 
-Each layer stays clean and single-responsibility.
+Each layer stays clean and handles a specific single responsibility.
 
 
 
