@@ -1,9 +1,9 @@
 import supabase from '../adapters/supabase.js';
 
-const User = {
-  async findUserById(id) {
+const DemoModel = {
+  async findDemoModelById(id) {
     const { data, error } = await supabase
-      .from('users')
+      .from('demomodels')
       .select('*')
       .eq('id', id)
       .single();
@@ -11,14 +11,15 @@ const User = {
     if (error) throw error;
     return data;
   },
-  async createUser(data) {
-    const { email, password } = data;
+
+  async createDemoModel(data) {
+    const { name, description } = data;
     const { error } = await supabase
-      .from('users')
-      .insert([{ email, password }]);
+      .from('demomodels')
+      .insert([{ name, description }]);
 
     if (error) throw error;
   }
 };
 
-export default User;
+export default DemoModel;
