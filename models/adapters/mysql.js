@@ -1,20 +1,11 @@
-// semantq_server/models/adapters/mysql.js
+// models/adapters/mysql.js — Updated for consistent raw vs. prepared query support
 import mysql from 'mysql2/promise';
 
-let connectionPool = null; // Cache the MySQL connection pool instance
+let connectionPool = null;
 
 const mysqlAdapter = {
-  /**
-   * Initializes the MySQL connection pool.
-   * This method is called by models/adapters/index.js.
-   * @param {object} dbConfig - Database configuration from semantiq.config.js.
-   * Expected to contain host, user, password, database, and port properties.
-   * @returns {object} The initialized MySQL connection pool.
-   */
   async init(dbConfig) {
-    if (connectionPool) {
-      return connectionPool; // Return existing pool if already initialized
-    }
+    if (connectionPool) return connectionPool;
 
     const config = {
       host: dbConfig.host || process.env.MYSQL_DB_HOST,
@@ -22,50 +13,40 @@ const mysqlAdapter = {
       password: dbConfig.password || process.env.MYSQL_DB_PASSWORD,
       database: dbConfig.database || process.env.MYSQL_DB_NAME,
       port: dbConfig.port || process.env.MYSQL_DB_PORT || 3306,
-      waitForConnections: true, // Recommended for production
-      connectionLimit: dbConfig.connectionLimit || 10, // Max number of connections in pool
-      queueLimit: 0 // Unlimited queueing for connections
+      waitForConnections: true,
+      connectionLimit: dbConfig.connectionLimit || 10,
+      queueLimit: 0
     };
 
-    // Basic validation for critical config
     if (!config.host || !config.user || !config.database) {
-      throw new Error('Missing critical MySQL connection details (host, user, database) in config or environment variables.');
+      throw new Error('Missing critical MySQL connection details');
     }
 
     try {
       connectionPool = mysql.createPool(config);
-      // Test the connection to ensure it's valid
-      await connectionPool.getConnection(); // Get and release a connection to test pool
-      console.log('MySQL connection pool initialized successfully!');
+      await connectionPool.getConnection();
+      console.log('✅ MySQL connection pool initialized');
       return connectionPool;
     } catch (error) {
-      console.error('Failed to initialize MySQL connection pool:', error);
+      console.error('❌ Failed to initialize MySQL pool:', error);
       throw error;
     }
   },
 
-  /**
-   * Executes a SQL query using the initialized connection pool.
-   * This provides a consistent interface for models (e.g., db.query(sql, params)).
-   * @param {string} sql - The SQL query string.
-   * @param {Array<any>} [params] - Parameters for the prepared statement.
-   * @returns {Promise<[Array<any>, Array<any>]>} A promise that resolves to [rows, fields].
-   */
-  async query(sql, params) {
-    if (!connectionPool) {
-      throw new Error('MySQL connection pool not initialized. Call init() first.');
-    }
-    // Use execute for prepared statements, which is safer and recommended
-    return await connectionPool.execute(sql, params);
+  async query(sql, params = []) {
+    if (!connectionPool) throw new Error('MySQL pool not initialized.');
+    return await connectionPool.execute(sql, params); // prepared statement
   },
 
-  /**
-   * Ends all connections in the pool gracefully.
-   */
+  async raw(sql) {
+    if (!connectionPool) throw new Error('MySQL pool not initialized.');
+    return await connectionPool.query(sql); // allows raw, multi-statement execution (non-prepared)
+  },
+
   async end() {
     if (connectionPool) {
       await connectionPool.end();
-      console.log('MySQL connection pool closed.');
+      console.log('🛑 MySQL pool closed.');
       connectionPool = null;
     }
   }
