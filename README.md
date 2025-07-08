@@ -403,12 +403,23 @@ curl -X PUT http://localhost:3000/user/users/1 \
 curl -X DELETE http://localhost:3000/user/users/1
 ```
 
-
 ## 📚 API and Packages Documentation
 
 - [📖 Semantq API Reference](docs/SemantqApi.md)
 - [📦 Semantq Packages Guide](docs/SemantqPackages.md)
 
+### 📦 Suggested Modules
+
+#### [`@semantq/auth`](https://github.com/Gugulethu-Nyoni/semantq_auth)
+
+A full-stack, database-backed authentication module for Semantq Server.
+Includes built-in support for email-based registration, confirmation, login, and password recovery.
+
+
+#### [`Semantq Auth UI`](https://github.com/Gugulethu-Nyoni/semantq_auth_ui)
+
+Plug-and-play frontend UI for `@semantq/auth`.
+Includes all necessary HTML, CSS, and JS assets to get your authentication flow working out of the box.
 
 
 
