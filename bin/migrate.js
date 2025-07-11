@@ -1,27 +1,46 @@
-// semantq_server/bin/migrate.js
-
-import 'dotenv/config'; // <--- THIS LINE MUST BE THE FIRST IMPORT
+#!/usr/bin/env node
+import 'dotenv/config';
 import { fileURLToPath, pathToFileURL } from 'url';
 import path from 'path';
 import fs from 'fs/promises';
 import { discoverSemantqModules } from '../lib/moduleLoader.js';
 import loadConfigPromise from '../config_loader.js';
+import chalk from 'chalk';
+
+// Consistent with main CLI styling
+const purple = chalk.hex('#b56ef0');
+const purpleBright = chalk.hex('#d8a1ff');
+const blue = chalk.hex('#6ec7ff');
+const green = chalk.hex('#6ef0b5');
+const yellow = chalk.hex('#f0e66e');
+const errorRed = chalk.hex('#ff4d4d');
+const gray = chalk.hex('#aaaaaa');
+const cyan = chalk.hex('#6ef0e6');
+
+// Icons
+const SUCCESS_ICON = green('✓');
+const WARNING_ICON = yellow('⚠');
+const ERROR_ICON = errorRed('✗');
+const DB_ICON = purple('🗄️');
+const MIGRATION_ICON = cyan('🔄');
+const ROLLBACK_ICON = purpleBright('↩️');
+const DEBUG_ICON = gray('🔍');
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const projectRoot = path.resolve(__dirname, '..');
 
 // Enhanced debugging output
-console.log('\n--- Environment Debugging ---');
-console.log('Current Working Directory:', process.cwd());
-console.log('Project Root:', projectRoot);
-console.log('DB Connection Details:', {
+console.log(`\n${DEBUG_ICON} ${gray('--- Environment Debugging ---')}`);
+console.log(`${DEBUG_ICON} ${gray('Current Working Directory:')} ${process.cwd()}`);
+console.log(`${DEBUG_ICON} ${gray('Project Root:')} ${projectRoot}`);
+console.log(`${DEBUG_ICON} ${gray('DB Connection Details:')}`, {
   host: process.env.DB_MYSQL_HOST,
   port: process.env.DB_MYSQL_PORT,
   database: process.env.DB_MYSQL_NAME,
   user: process.env.DB_MYSQL_USER
 });
-console.log('--- Environment Debugging End ---\n');
+console.log(`${DEBUG_ICON} ${gray('--- Environment Debugging End ---')}\n`);
 
 async function pathExists(p) {
   try {
@@ -36,7 +55,7 @@ async function ensureMigrationsTable(db) {
   try {
     await db.raw(`SELECT 1 FROM schema_migrations LIMIT 1`);
   } catch (err) {
-    console.log('Initializing migrations table...');
+    console.log(`${MIGRATION_ICON} ${blue('Initializing migrations table...')}`);
     await db.raw(`
       CREATE TABLE IF NOT EXISTS schema_migrations (
         id INT AUTO_INCREMENT PRIMARY KEY,
@@ -49,8 +68,6 @@ async function ensureMigrationsTable(db) {
     await db.raw(`INSERT INTO schema_migrations (migration_name, batch) VALUES ('0000-migrations-table', 0)`);
   }
 }
-
-
 
 async function discoverAllMigrations(dbAdapterName) {
   const allMigrationFiles = [];
@@ -85,7 +102,7 @@ async function discoverAllMigrations(dbAdapterName) {
       }
     }
   } catch (err) {
-    console.error('❌ Error discovering module migrations:', err);
+    console.error(`${ERROR_ICON} ${errorRed('Error discovering module migrations:')}`, err);
   }
 
   return allMigrationFiles.sort((a, b) => a.name.localeCompare(b.name));
@@ -120,9 +137,9 @@ async function safeDbEnd(db) {
   if (db && typeof db.end === 'function') {
     try {
       await db.end();
-      console.log('🛑 Database connection closed');
+      console.log(`${SUCCESS_ICON} ${green('Database connection closed')}`);
     } catch (err) {
-      console.error('⚠️ Error closing database connection:', err);
+      console.error(`${ERROR_ICON} ${errorRed('Error closing database connection:')}`, err);
     }
   }
 }
@@ -138,7 +155,7 @@ async function initializeDatabaseAdapter(config) {
   const adapterFilePath = path.join(projectRoot, 'models', 'adapters', `${dbAdapterName}.js`);
   const adapterFileUrl = pathToFileURL(adapterFilePath).href;
 
-  console.log(`🔍 Loading database adapter from: ${adapterFilePath}`);
+  console.log(`${DB_ICON} ${blue('Loading database adapter from:')} ${gray(adapterFilePath)}`);
   const adapterModule = await import(adapterFileUrl);
   const adapter = adapterModule.default;
 
@@ -146,20 +163,27 @@ async function initializeDatabaseAdapter(config) {
     throw new Error(`Adapter '${dbAdapterName}' is invalid or missing init method`);
   }
 
-  await adapter.init(adapterConfig);
-  console.log(`✅ Database adapter '${dbAdapterName}' initialized successfully`);
-  return adapter;
+  const dbConnection = await adapter.init(adapterConfig);
+  
+  // Validate the connection object has required methods
+  if (!dbConnection || typeof dbConnection.query !== 'function') {
+    throw new Error(`Database adapter '${dbAdapterName}' did not return a valid connection object with query() method`);
+  }
+
+  console.log(`${SUCCESS_ICON} ${green('Database adapter initialized:')} ${gray(dbAdapterName)}`);
+  return dbConnection;
 }
 
+
 async function runMigrations() {
-  console.log('🚀 Starting database migrations...');
+  console.log(`\n${MIGRATION_ICON} ${purple('Starting database migrations...')}`);
 
   const config = await loadConfigPromise;
-  const db = await initializeDatabaseAdapter(config);
+  const db = await initializeDatabaseAdapter(config); // db now holds the actual connection
 
   const allMigrationFiles = await discoverAllMigrations(config.database.adapter);
   if (allMigrationFiles.length === 0) {
-    console.log('ℹ️ No migration files found to run.');
+    console.log(`${WARNING_ICON} ${yellow('No migration files found to run')}`);
     await safeDbEnd(db);
     return;
   }
@@ -170,18 +194,16 @@ async function runMigrations() {
     const [runMigrations] = await db.query(`SELECT migration_name FROM schema_migrations`);
     runMigrationNames = new Set(runMigrations.map(m => m.migration_name));
   } catch (err) {
-    // If schema_migrations doesn't exist yet, run the initial migration first
     if (err.code === 'ER_NO_SUCH_TABLE') {
       const initMigration = allMigrationFiles.find(m => m.name === '0000-migrations-table.js');
       if (initMigration) {
-        console.log('Initializing migrations table...');
+        console.log(`${MIGRATION_ICON} ${blue('Initializing migrations table...')}`);
         await runJsMigration(initMigration, db);
         await db.query(
           `INSERT INTO schema_migrations (migration_name, batch) VALUES (?, ?)`,
           [initMigration.name, 0]
         );
       }
-      // Re-fetch run migrations after creating the table
       const [runMigrations] = await db.query(`SELECT migration_name FROM schema_migrations`);
       runMigrationNames = new Set(runMigrations.map(m => m.migration_name));
     } else {
@@ -192,7 +214,7 @@ async function runMigrations() {
   // Filter pending migrations
   const pendingMigrations = allMigrationFiles.filter(m => !runMigrationNames.has(m.name));
   if (pendingMigrations.length === 0) {
-    console.log('ℹ️ No pending migrations to run.');
+    console.log(`${WARNING_ICON} ${yellow('No pending migrations to run')}`);
     await safeDbEnd(db);
     return;
   }
@@ -203,7 +225,7 @@ async function runMigrations() {
 
   // Run pending migrations
   for (const migration of pendingMigrations) {
-    console.log(`\n▶️ Running: ${migration.name} (${migration.source})`);
+    console.log(`\n${MIGRATION_ICON} ${blue('Running:')} ${migration.name} ${gray(`(${migration.source})`)}`);
     
     try {
       if (migration.name.endsWith('.js')) {
@@ -216,24 +238,24 @@ async function runMigrations() {
         `INSERT INTO schema_migrations (migration_name, batch) VALUES (?, ?)`,
         [migration.name, currentBatch]
       );
-      console.log(`✅ Success: ${migration.name}`);
+      console.log(`${SUCCESS_ICON} ${green('Success:')} ${migration.name}`);
     } catch (err) {
-      console.error(`❌ Failed: ${migration.name}`, err);
-      console.error('🛑 Aborting migrations due to failure');
+      console.error(`${ERROR_ICON} ${errorRed('Failed:')} ${migration.name}`, err);
+      console.error(`${ERROR_ICON} ${errorRed('Aborting migrations due to failure')}`);
       await safeDbEnd(db);
       process.exit(1);
     }
   }
 
-  console.log('\n🎉 All migrations completed successfully!');
+  console.log(`\n${SUCCESS_ICON} ${green('All migrations completed successfully!')}`);
   await safeDbEnd(db);
 }
 
 async function rollbackMigrations(options = {}) {
-  console.log('🔙 Starting migration rollback...');
+  console.log(`\n${ROLLBACK_ICON} ${purple('Starting migration rollback...')}`);
   
   const config = await loadConfigPromise;
-  const db = await initializeDatabaseAdapter(config);
+  const db = await initializeDatabaseAdapter(config); // db now holds the actual connection
   await ensureMigrationsTable(db);
 
   const allMigrationFiles = await discoverAllMigrations(config.database.adapter);
@@ -260,22 +282,22 @@ async function rollbackMigrations(options = {}) {
   }
 
   if (migrationsToRollback.length === 0) {
-    console.log('ℹ️ No migrations to rollback');
+    console.log(`${WARNING_ICON} ${yellow('No migrations to rollback')}`);
     await safeDbEnd(db);
     return;
   }
 
-  console.log(`\n🔙 Rolling back ${migrationsToRollback.length} migration(s):`);
-  migrationsToRollback.forEach(m => console.log(` - ${m.migration_name}`));
+  console.log(`\n${ROLLBACK_ICON} ${blue('Rolling back')} ${migrationsToRollback.length} ${blue('migration(s):')}`);
+  migrationsToRollback.forEach(m => console.log(` ${gray('-')} ${m.migration_name}`));
 
   for (const migration of migrationsToRollback) {
     const migrationFile = allMigrationFiles.find(m => m.name === migration.migration_name);
     if (!migrationFile) {
-      console.warn(`⚠️ Migration file not found for: ${migration.migration_name}`);
+      console.warn(`${WARNING_ICON} ${yellow('Migration file not found for:')} ${migration.migration_name}`);
       continue;
     }
 
-    console.log(`\n▶️ Rolling back: ${migration.migration_name}`);
+    console.log(`\n${ROLLBACK_ICON} ${blue('Rolling back:')} ${migration.migration_name}`);
     
     try {
       if (migrationFile.name.endsWith('.js')) {
@@ -292,16 +314,16 @@ async function rollbackMigrations(options = {}) {
         `DELETE FROM schema_migrations WHERE migration_name = ?`,
         [migration.migration_name]
       );
-      console.log(`✅ Successfully rolled back: ${migration.migration_name}`);
+      console.log(`${SUCCESS_ICON} ${green('Successfully rolled back:')} ${migration.migration_name}`);
     } catch (err) {
-      console.error(`❌ Failed to rollback: ${migration.migration_name}`, err);
-      console.error('🛑 Aborting rollback due to failure');
+      console.error(`${ERROR_ICON} ${errorRed('Failed to rollback:')} ${migration.migration_name}`, err);
+      console.error(`${ERROR_ICON} ${errorRed('Aborting rollback due to failure')}`);
       await safeDbEnd(db);
       process.exit(1);
     }
   }
 
-  console.log('\n🎉 Rollback completed successfully!');
+  console.log(`\n${SUCCESS_ICON} ${green('Rollback completed successfully!')}`);
   await safeDbEnd(db);
 }
 
@@ -320,15 +342,15 @@ async function main() {
     } else if (command === 'migrate') {
       await runMigrations();
     } else {
-      console.log('Usage:');
-      console.log('  node bin/migrate.js migrate       # Run pending migrations');
-      console.log('  node bin/migrate.js rollback     # Rollback last migration');
-      console.log('  node bin/migrate.js rollback --steps=3  # Rollback last 3 migrations');
-      console.log('  node bin/migrate.js rollback --all      # Rollback all migrations');
-      console.log('  node bin/migrate.js rollback 0002-sessions.js # Rollback specific migration');
+      console.log(`${blue('Usage:')}`);
+      console.log(` ${gray('›')} ${purple('node bin/migrate.js migrate')}       ${gray('# Run pending migrations')}`);
+      console.log(` ${gray('›')} ${purple('node bin/migrate.js rollback')}      ${gray('# Rollback last migration')}`);
+      console.log(` ${gray('›')} ${purple('node bin/migrate.js rollback --steps=3')}  ${gray('# Rollback last 3 migrations')}`);
+      console.log(` ${gray('›')} ${purple('node bin/migrate.js rollback --all')}      ${gray('# Rollback all migrations')}`);
+      console.log(` ${gray('›')} ${purple('node bin/migrate.js rollback 0002-sessions.js')} ${gray('# Rollback specific migration')}`);
     }
   } catch (err) {
-    console.error('❌ Unhandled error:', err);
+    console.error(`${ERROR_ICON} ${errorRed('Unhandled error:')}`, err);
     process.exit(1);
   }
 }
