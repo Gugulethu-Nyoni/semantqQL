@@ -1,5 +1,19 @@
 // models/adapters/mysql.js — Updated for consistent raw vs. prepared query support
 import mysql from 'mysql2/promise';
+import chalk from 'chalk';
+
+// Consistent with other files
+const green = chalk.hex('#6ef0b5');
+const red = chalk.hex('#ff4d4d');
+const yellow = chalk.hex('#f0e66e');
+const gray = chalk.hex('#aaaaaa');
+const blue = chalk.hex('#6ec7ff');
+
+// Icons
+const SUCCESS_ICON = green('✓');
+const ERROR_ICON = red('✗');
+const STOP_ICON = yellow('🛑');
+const DB_ICON = blue('🗄️');
 
 let connectionPool = null;
 
@@ -19,16 +33,18 @@ const mysqlAdapter = {
     };
 
     if (!config.host || !config.user || !config.database) {
+      console.error(`${ERROR_ICON} ${red('Missing critical MySQL connection details')}`);
       throw new Error('Missing critical MySQL connection details');
     }
 
     try {
+      console.log(`${DB_ICON} ${blue('Initializing MySQL connection pool...')}`);
       connectionPool = mysql.createPool(config);
       await connectionPool.getConnection();
-      console.log('✅ MySQL connection pool initialized');
+      console.log(`${SUCCESS_ICON} ${green('MySQL connection pool initialized')}`);
       return connectionPool;
     } catch (error) {
-      console.error('❌ Failed to initialize MySQL pool:', error);
+      console.error(`${ERROR_ICON} ${red('Failed to initialize MySQL pool:')}`, error);
       throw error;
     }
   },
@@ -46,7 +62,7 @@ const mysqlAdapter = {
   async end() {
     if (connectionPool) {
       await connectionPool.end();
-      console.log('🛑 MySQL pool closed.');
+      console.log(`${STOP_ICON} ${yellow('MySQL pool closed')}`);
       connectionPool = null;
     }
   }
