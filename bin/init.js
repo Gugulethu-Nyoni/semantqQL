@@ -2,43 +2,63 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import chalk from 'chalk';
+
+// Consistent with main CLI styling
+const purple = chalk.hex('#b56ef0');
+const purpleBright = chalk.hex('#d8a1ff');
+const blue = chalk.hex('#6ec7ff');
+const green = chalk.hex('#6ef0b5');
+const yellow = chalk.hex('#f0e66e');
+const errorRed = chalk.hex('#ff4d4d');
+const gray = chalk.hex('#aaaaaa');
+
+// Icons
+const SUCCESS_ICON = green('✓');
+const WARNING_ICON = yellow('⚠');
+const FILE_ICON = blue('📄');
+const CONFIG_ICON = purple('⚙️');
+const ENV_ICON = purpleBright('🔑');
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename); // This is /myapp/semantq_server/bin
+const __dirname = path.dirname(__filename);
 
 // Path to the 'semantq_server' directory itself (parent of 'bin')
-const semantqServerDir = path.resolve(__dirname, '..'); // This is /myapp/semantq_server
+const semantqServerDir = path.resolve(__dirname, '..');
 
 // Path to the overall project root (parent of 'semantq_server')
-// This is two levels up from 'bin', or one level up from 'semantq_serverDir'
-const containingProjectRoot = path.resolve(__dirname, '..', '..'); // This is /myapp/
+const containingProjectRoot = path.resolve(__dirname, '..', '..');
 
 function copyIfNotExists(src, dest) {
   if (!fs.existsSync(dest)) {
     fs.copyFileSync(src, dest);
-    console.log(`Created ${dest} from template.`);
+    console.log(`${SUCCESS_ICON} ${FILE_ICON} ${green('Created:')} ${gray(dest)}`);
   } else {
-    console.log(`${dest} already exists.`);
+    console.log(`${WARNING_ICON} ${gray('File exists:')} ${gray(dest)}`);
   }
 }
 
-// --- MODIFIED LINE FOR .env FILE ---
-// We want .env to be copied to the containing project root (e.g., /myapp/.env)
-const envExample = path.join(semantqServerDir, '.env.example'); // .env.example is inside semantq_server
-const envFile = path.join(containingProjectRoot, '.env'); // .env goes to the containing project root
-// --- END MODIFIED LINE ---
+// .env file setup
+const envExample = path.join(semantqServerDir, '.env.example');
+const envFile = path.join(containingProjectRoot, '.env');
 
-// For semantiq.config.js, we assume it's copied into the semantq_server directory itself
-// This is consistent with config_loader's fallback logic.
+// Config file setup
 const configExample = path.join(semantqServerDir, 'config', 'semantiq.config.example.js');
 const configFile = path.join(semantqServerDir, 'semantiq.config.js');
 
+console.log(`${CONFIG_ICON} ${purple('Initializing configuration files...')}`);
 
 try {
+  // Copy environment files
+  console.log(`${ENV_ICON} ${blue('Setting up environment:')}`);
   copyIfNotExists(envExample, envFile);
+  
+  // Copy config files
+  console.log(`${CONFIG_ICON} ${blue('Setting up configuration:')}`);
   copyIfNotExists(configExample, configFile);
-  console.log('Initialization complete.');
+  
+  console.log(`${SUCCESS_ICON} ${green('Initialization complete!')}`);
 } catch (err) {
-  console.error('Error during initialization:', err);
+  console.error(`${ERROR_ICON} ${errorRed('Initialization failed:')}`, err);
   process.exit(1);
 }
