@@ -43,8 +43,8 @@ const envExample = path.join(semantqServerDir, '.env.example');
 const envFile = path.join(containingProjectRoot, '.env');
 
 // Config file setup
-const configExample = path.join(semantqServerDir, 'config', 'semantiq.config.example.js');
-const configFile = path.join(semantqServerDir, 'semantiq.config.js');
+const configExample = path.join(semantqServerDir, 'config', 'semantq.config.example.js');
+const configFile = path.join(semantqServerDir, 'semantq.config.js');
 
 console.log(`${CONFIG_ICON} ${purple('Initializing configuration files...')}`);
 
