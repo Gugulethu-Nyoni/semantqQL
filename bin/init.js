@@ -16,6 +16,7 @@ const gray = chalk.hex('#aaaaaa');
 // Icons
 const SUCCESS_ICON = green('✓');
 const WARNING_ICON = yellow('⚠');
+const ERROR_ICON = errorRed('✗');
 const FILE_ICON = blue('📄');
 const CONFIG_ICON = purple('⚙️');
 const ENV_ICON = purpleBright('🔑');
