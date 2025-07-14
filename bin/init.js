@@ -60,8 +60,8 @@ try {
   copyIfNotExists(envExample, envFile);
   
   // Copy config files
-  console.log(`${CONFIG_ICON} ${blue('Setting up configuration:')}`);
-  copyIfNotExists(configExample, configFile);
+  //console.log(`${CONFIG_ICON} ${blue('Setting up configuration:')}`);
+  //copyIfNotExists(configExample, configFile);
   
   console.log(`${SUCCESS_ICON} ${green('Initialization complete!')}`);
 } catch (err) {
