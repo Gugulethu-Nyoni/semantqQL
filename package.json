@@ -23,6 +23,7 @@
   "author": "Gugulethu Nyoni",
   "license": "MIT",
   "dependencies": {
+    "@prisma/client": "^6.11.1",
     "@semantq/auth": "^1.0.2",
     "body-parser": "^1.20.1",
     "cookie-parser": "^1.4.7",
@@ -33,6 +34,7 @@
   },
   "devDependencies": {
     "jest": "^29.5.0",
-    "nodemon": "^2.0.22"
+    "nodemon": "^2.0.22",
+    "prisma": "^6.11.1"
   }
 }
