@@ -24,7 +24,7 @@
   "license": "MIT",
   "dependencies": {
     "@prisma/client": "^6.11.1",
-    "@semantq/auth": "^1.0.2",
+    "@semantq/auth": "^1.0.3",
     "body-parser": "^1.20.1",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
