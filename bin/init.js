@@ -4,7 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import chalk from 'chalk';
 
-// Consistent with main CLI styling
+// Console styling
 const purple = chalk.hex('#b56ef0');
 const purpleBright = chalk.hex('#d8a1ff');
 const blue = chalk.hex('#6ec7ff');
@@ -21,48 +21,44 @@ const FILE_ICON = blue('📄');
 const CONFIG_ICON = purple('⚙️');
 const ENV_ICON = purpleBright('🔑');
 
+// Setup paths
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Path to the 'semantq_server' directory itself (parent of 'bin')
 const semantqServerDir = path.resolve(__dirname, '..');
+const projectRoot = path.resolve(semantqServerDir, '..');
 
-// Path to the overall project root (parent of 'semantq_server')
-const containingProjectRoot = path.resolve(__dirname, '..', '..');
-
+// Utility: copy only if destination does not exist
 function copyIfNotExists(src, dest) {
+  if (!fs.existsSync(src)) {
+    console.warn(`${WARNING_ICON} ${yellow('Source not found:')} ${gray(src)}`);
+    return;
+  }
+
   if (!fs.existsSync(dest)) {
     fs.copyFileSync(src, dest);
     console.log(`${SUCCESS_ICON} ${FILE_ICON} ${green('Created:')} ${gray(dest)}`);
   } else {
-    console.log(`${WARNING_ICON} ${gray('File exists:')} ${gray(dest)}`);
+    console.log(`${WARNING_ICON} ${gray('Already exists:')} ${gray(dest)}`);
   }
 }
 
-// .env file setup
-//const envExample = path.join(semantqServerDir, '.env.example');
-//const envFile = path.join(containingProjectRoot, '.env');
-
-// .env file setup
-//const envExample = path.join(semantqServerDir, '.env.example');
-//const envFile = path.join(semantqServerDir, '.env');
-
-
-// Config file setup
-const configExample = path.join(semantqServerDir, 'config', 'semantq.config.example.js');
-const configFile = path.join(semantqServerDir, 'semantq.config.js');
-
+// Begin init
 console.log(`${CONFIG_ICON} ${purple('Initializing configuration files...')}`);
 
 try {
-  // Copy environment files
+  // Copy .env
+  const envExample = path.join(semantqServerDir, '.env.example');
+  const envFile = path.join(projectRoot, '.env');
   console.log(`${ENV_ICON} ${blue('Setting up environment:')}`);
   copyIfNotExists(envExample, envFile);
-  
-  // Copy config files
-  //console.log(`${CONFIG_ICON} ${blue('Setting up configuration:')}`);
-  //copyIfNotExists(configExample, configFile);
-  
+
+  // Copy config
+  const configExample = path.join(semantqServerDir, 'config', 'semantq.config.example.js');
+  const configFile = path.join(semantqServerDir, 'semantq.config.js');
+  console.log(`${CONFIG_ICON} ${blue('Setting up configuration:')}`);
+  copyIfNotExists(configExample, configFile);
+
   console.log(`${SUCCESS_ICON} ${green('Initialization complete!')}`);
 } catch (err) {
   console.error(`${ERROR_ICON} ${errorRed('Initialization failed:')}`, err);
