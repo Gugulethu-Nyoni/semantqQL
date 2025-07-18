@@ -44,8 +44,8 @@ function copyIfNotExists(src, dest) {
 //const envFile = path.join(containingProjectRoot, '.env');
 
 // .env file setup
-const envExample = path.join(semantqServerDir, '.env.example');
-const envFile = path.join(semantqServerDir, '.env');
+//const envExample = path.join(semantqServerDir, '.env.example');
+//const envFile = path.join(semantqServerDir, '.env');
 
 
 // Config file setup
