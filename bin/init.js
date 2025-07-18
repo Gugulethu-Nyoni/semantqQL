@@ -49,7 +49,8 @@ console.log(`${CONFIG_ICON} ${purple('Initializing configuration files...')}`);
 try {
   // Copy .env
   const envExample = path.join(semantqServerDir, '.env.example');
-  const envFile = path.join(projectRoot, '.env');
+  //const envFile = path.join(projectRoot, '.env');
+  const envFile = path.join(semantqServerDir, '.env');
   console.log(`${ENV_ICON} ${blue('Setting up environment:')}`);
   copyIfNotExists(envExample, envFile);
 
