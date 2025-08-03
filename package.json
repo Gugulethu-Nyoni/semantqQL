@@ -1,5 +1,5 @@
 {
-  "name": "semantq_server",
+  "name": "semantqQL",
   "version": "1.0.0",
   "type": "module",
   "description": "Semantq full stack backend server with modular MCSR architecture",

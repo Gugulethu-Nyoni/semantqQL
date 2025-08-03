@@ -1,8 +1,8 @@
-## 📦 `semantq_server` Backend
+## 📦 `semantqQL` Server
 
 ### Introduction
 
-**`semantq_server`** is a swift, modern, **Node.js backend framework** built on **Express.js**.
+**`semantqQL`** is a swift, modern, **Node.js backend framework** built on **Express.js**.
 Although framework-agnostic, it’s purposefully designed to complement and power the **Semantq JavaScript full-stack framework**.
 
 It ships with the following:
@@ -24,8 +24,8 @@ It ships with the following:
 In a real-world project structure:
 
 * Your **Semantq project root** (e.g. `myapp/`)
-* `semantq_server` will sit inside your project as:
-  `myapp/semantq_server/`
+* `semantqQL` will sit inside your project as:
+  `myapp/semantqQL/`
 
 The install command in production-ready Semantq CLI will be:
 
@@ -33,7 +33,7 @@ The install command in production-ready Semantq CLI will be:
 semantq install:server
 ```
 
-This will clone the semantq_server repo to the root of your app e.g. myapp/semantq_server
+This will clone the semantqQL repo to the root of your app e.g. myapp/semantqQL
 
 ## Configuration Setup
 
@@ -44,7 +44,7 @@ After installing the server module:
 Use the commands below to into the server directory to initialise it. 
 
 ```bash
-cd semantq_server
+cd semantqQL
 npm run init
 ```
 
@@ -84,7 +84,7 @@ npm run env:copy
 
 This will copy example config & Env files
 
-From inside `semantq_server/` run:
+From inside `semantqQL/` run:
 
 ```bash
 npm run env:copy
@@ -145,7 +145,7 @@ npm run migrate
 * Runs all pending migrations from:
 
   ```
-  semantq_server/models/migrations/<adapter>/
+  semantqQL/models/migrations/<adapter>/
   ```
 * Tracks applied migrations in a `migrations` table
 
@@ -179,8 +179,8 @@ server.js     → application entry point
 
 ## Important Notes
 
-* When deploying for production, you may add a local `.env` inside `semantq_server/` if needed, but the **project root `.env` should always be the master source**.
-* Packages/modules added into `semantq_server/packages/` must follow the MCSR structure to be auto-loaded.
+* When deploying for production, you may add a local `.env` inside `semantqQL/` if needed, but the **project root `.env` should always be the master source**.
+* Packages/modules added into `semantqQL/packages/` must follow the MCSR structure to be auto-loaded.
 
 
 ## CRUD Implementation with MCSR Pattern
