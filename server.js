@@ -31,10 +31,11 @@ const MODULE_ICON = blue('🧩');
 const CONFIG_ICON = purpleBright('⚙️');
 const HEALTH_ICON = green('❤️');
 
-// 🆕 Import Supabase adapter
+// 🆕 Import both database adapters from their respective files
 import supabaseAdapter from './models/adapters/supabase.js';
+import mysqlAdapter from './models/adapters/mysql.js';
 
-// 🆕 Import config loader
+// Import config loader
 import configPromise from './config_loader.js';
 
 // Setup __dirname for ES module
@@ -83,11 +84,24 @@ const PORT = process.env.PORT || 3003;
         return false;
       }
     }
+    
+    // ⚠️ DYNAMIC ADAPTER INITIALIZATION
+    // This switch statement correctly initializes only the adapter specified in the config.
+    const selectedAdapter = semantqConfig.database.adapter;
+console.log(`${MODULE_ICON} ${blue(`Initializing '${selectedAdapter}' adapter...`)}`);
 
-    console.log(`${MODULE_ICON} ${blue('Initializing Supabase adapter...')}`);
-    // ✓ INIT Supabase first with fallback to .env
-    await supabaseAdapter.init();
-    console.log(`${SUCCESS_ICON} ${green('Supabase adapter initialized')}`);
+switch (selectedAdapter) {
+  case 'supabase':
+    await supabaseAdapter.init(semantqConfig);
+    break;
+  case 'mysql':
+    // ✅ PASS THE DATABASE CONFIG ONLY, not the entire semantqConfig
+    await mysqlAdapter.init(semantqConfig.database.config);
+    break;
+  default:
+    console.log(`${WARNING_ICON} ${yellow(`No database adapter specified or unknown adapter '${selectedAdapter}'.`)}`);
+}
+console.log(`${SUCCESS_ICON} ${green('Database adapter initialized')}`);
 
     // Load core routes
     const coreRoutesPath = path.resolve(__dirname, 'routes');
