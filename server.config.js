@@ -7,8 +7,8 @@ export default {
       host: 'localhost',
       port: 3306,
       user: 'root',
-      password: 'my-secret-pw',
-      database: 'dev',
+      password: 'db-pw',
+      database: 'dbname',
     },
   },
   server: {
@@ -19,12 +19,12 @@ export default {
   },
   email: {
     driver: 'resend', // 'mailgun' | 'smtp' | 'mock'
-    resend_api_key: 're_8AFucjci_GEDk1y2txzGWkkFXhAcQXKYw',
-    email_from: 'noreply@sender.formiquejs.com',
-    email_from_name: 'Semantq Dev',
+    resend_api_key: 're_Abc',
+    email_from: 'noreply@some.domain.com',
+    email_from_name: 'Brand Name',
   },
   brand: {
-    name: 'Brand_name',
+    name: 'Brand Name',
     support_email: 'support@brandname.com',
     frontend_base_url: 'http://localhost:3000',
   },
@@ -36,6 +36,6 @@ export default {
     'http://127.0.0.1:3000',
     'http://localhost:3003'
   ],
-    environment: 'production',
+    environment: 'development',
 
 };
