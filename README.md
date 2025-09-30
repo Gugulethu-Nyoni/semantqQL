@@ -1,4 +1,4 @@
-## 📦 `semantqQL` Server
+## `semantqQL` Server
 
 ### Introduction
 
@@ -104,10 +104,10 @@ The server relies on these files to:
 * Load environment settings
 
 
-## 📑 Running Migrations
+## Running Migrations
 
 
-**📌 Migration Templates**
+** Migration Templates**
 
 We’ve provided **template migration sample files** inside:
 
@@ -221,7 +221,7 @@ router.delete('/users/:id', userController.deleteUser);
 export default router;
 ```
 
-**➡️ Why first?**
+**➡ Why first?**
 Setting up routes early lets you map your planned API structure cleanly and drive what controllers need to exist.
 
 
@@ -261,7 +261,7 @@ export default userController;
 ```
 
 
-### 3️⃣ Create the Service
+### Create the Service
 
 Services handle business logic and act as a bridge between controllers and models.
 
@@ -291,11 +291,11 @@ const userService = {
 export default userService;
 ```
 
-**➡️ Why third?**
+** Why third?**
 Services allow you to encapsulate app logic separately from HTTP handling or DB logic — keeping things modular and clean.
 
 
-### 4️⃣ Create the Model
+### Create the Model
 
 Models handle direct database access using raw SQL or an ORM.
 
@@ -343,7 +343,7 @@ export default User;
 ```
 
 
-## 📦 Recap Flow
+## Recap Flow
 
 ✔️ **Route** calls →
 ✔️ **Controller** calls →
@@ -370,7 +370,7 @@ models/
 
 
 
-## 📌 Testing CRUD via `curl`
+## Testing CRUD via `curl`
 
 You can run curl api calls on the terminal or use Postman to test this server. 
 Example calls:
@@ -403,13 +403,13 @@ curl -X PUT http://localhost:3000/user/users/1 \
 curl -X DELETE http://localhost:3000/user/users/1
 ```
 
-## 📚 API and Packages Documentation
+## API and Packages Documentation
+- [semantqQL Routing](docs/Routing.md)
+- [Semantq API Reference](docs/SemantqApi.md)
+- [Semantq Packages Guide](docs/SemantqPackages.md)
+- [Full Stack Semantq CRUD Guide](docs/Semantq_CRUD.md)
 
-- [📖 Semantq API Reference](docs/SemantqApi.md)
-- [📦 Semantq Packages Guide](docs/SemantqPackages.md)
-- [📦 Full Stack Semantq CRUD Guide](docs/Semantq_CRUD.md)
-
-### 📦 Suggested Modules
+### Suggested Modules
 
 #### [`@semantq/auth`](https://github.com/Gugulethu-Nyoni/semantq_auth)
 
