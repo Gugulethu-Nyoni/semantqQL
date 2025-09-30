@@ -1,5 +1,5 @@
 // models/index.js
-import config from '../semantq.config.js'; // This direct import of config is problematic for config_loader
+import config from '../server.config.js'; // This direct import of config is problematic for config_loader
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';

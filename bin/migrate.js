@@ -149,7 +149,7 @@ async function initializeDatabaseAdapter(config) {
   const adapterConfig = config.database?.config || {};
 
   if (!dbAdapterName) {
-    throw new Error('No database adapter configured in semantq.config.js');
+    throw new Error('No database adapter configured in server.config.js');
   }
 
   const adapterFilePath = path.join(projectRoot, 'models', 'adapters', `${dbAdapterName}.js`);

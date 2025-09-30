@@ -110,8 +110,8 @@ try {
   }
 
   // --- config SETUP ---
-  const configExample = path.join(semantqServerDir, 'config', 'semantq.config.example.js');
-  const configFile = path.join(semantqServerDir, 'semantq.config.js');
+  const configExample = path.join(semantqServerDir, 'config', 'server.config.example.js');
+  const configFile = path.join(semantqServerDir, 'server.config.js');
   console.log(`${CONFIG_ICON} ${blue('Setting up configuration:')}`);
   copyIfNotExists(configExample, configFile);
 

@@ -48,9 +48,9 @@ cd semantqQL
 npm run init
 ```
 
-In the Semantq project context `npm run init` will pick up existence of .env and semantq.config.js in your Semantq project root and you're sorted.
+In the Semantq project context `npm run init` will pick up existence of .env and server.config.js in your Semantq project root and you're sorted.
 
-You just need to add this to your semantqproject/semantq.config.js:
+You just need to add this to your semantqproject/server.config.js:
 
 ```bash
 export default {

@@ -72,3 +72,14 @@ enum UserStatus {
 
   @@map("status") // Map enum values to database column values if they differ
 }
+
+
+model Post {
+  id        Int      @id @default(autoincrement())
+  title     String
+  body      String   // or "content" if you prefer
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("posts") // Optional: maps to "posts" table in database
+}

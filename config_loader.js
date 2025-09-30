@@ -9,7 +9,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // Path to config file in the same directory
-const configPath = path.join(__dirname, 'semantq.config.js');
+const configPath = path.join(__dirname, 'server.config.js');
 const configUrl = pathToFileURL(configPath).href;
 
 /**
