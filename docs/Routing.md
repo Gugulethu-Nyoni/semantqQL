@@ -68,6 +68,33 @@ This single command creates:
 
 semantqQL provides multiple security levels through direct middleware composition:
 
+## CORS Security Layer
+
+All routes in semantqQL are protected by a universal CORS validation layer. Even your public routes undergo CORS checks to ensure they only accept requests from authorized domains.
+
+## Configuration
+The server validates origins against `server.config.js`:
+```javascript
+allowedOrigins: [
+  'http://localhost:3000', // Vite dev server
+  'https://example.com',   // Your production domain
+]
+```
+
+## Important Notes
+- **Update for production**: Modify `allowedOrigins` before deployment
+- **Browser-only**: CORS only applies to web-based API calls (client-side JavaScript)
+- **Does not affect**: Tools like Postman, curl, or server-to-server calls
+
+## Multi-Layer Security
+semantqQL implements comprehensive protection through:
+1. **CORS** - Domain validation
+2. **Authentication** - User identity  
+3. **API Key** - Service authorization
+4. **Authorization** - Role-based access
+
+Plus strategic combinations of these layers for maximum security coverage.
+
 ### 🟢 Public Routes
 **No authentication required**
 ```javascript
