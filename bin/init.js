@@ -3,8 +3,13 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import chalk from 'chalk';
+import crypto from 'crypto';
 
-// Console styling
+// Get command line arguments, excluding 'node' and the script path
+const args = process.argv.slice(2);
+const forceKey = args.includes('--force-key'); // Check for the flag
+
+// Console styling (omitted for brevity, assume they are still here)
 const purple = chalk.hex('#b56ef0');
 const purpleBright = chalk.hex('#d8a1ff');
 const blue = chalk.hex('#6ec7ff');
@@ -24,22 +29,65 @@ const ENV_ICON = purpleBright('🔑');
 // Setup paths
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-
 const semantqServerDir = path.resolve(__dirname, '..');
-const projectRoot = path.resolve(semantqServerDir, '..');
 
-// Utility: copy only if destination does not exist
+// Utility: Generate a secure application key
+function generateAppKey() {
+  return crypto.randomBytes(32).toString('hex');
+}
+
+// Utility: Reads .env content, generates key, and injects/replaces the APP_KEY line
+function injectOrReplaceAppKey(envFilePath, force = false) {
+  try {
+    let content = fs.readFileSync(envFilePath, 'utf8');
+    const keyRegex = /^(APP_KEY\s*=\s*).*$/m;
+    const keyExists = keyRegex.test(content);
+    const newAppKey = generateAppKey();
+
+    if (!keyExists) {
+      // 1. If key is missing, append it
+      content += `\nAPP_KEY=${newAppKey}\n`;
+      console.log(`${SUCCESS_ICON} ${ENV_ICON} ${green('Generated and appended APP_KEY.')}`);
+    } else if (force) {
+      // 2. If --force-key is used, replace the existing value
+      content = content.replace(keyRegex, `$1${newAppKey}`);
+      console.log(`${SUCCESS_ICON} ${ENV_ICON} ${green('FORCE REGENERATED APP_KEY.')}`);
+    } else {
+      // 3. Key exists, no force flag
+      const existingKey = content.match(keyRegex)?.[0].split('=')[1].trim();
+      if (!existingKey) {
+         // Key is present but empty (APP_KEY=) -> fill it
+         content = content.replace(keyRegex, `$1${newAppKey}`);
+         console.log(`${SUCCESS_ICON} ${ENV_ICON} ${green('Set initial APP_KEY.')}`);
+      } else {
+         console.log(`${WARNING_ICON} ${gray('APP_KEY already set.')} Use ${yellow('--force-key')} to regenerate.`);
+         return; // Do nothing
+      }
+    }
+
+    // Write the modified content back
+    fs.writeFileSync(envFilePath, content);
+
+  } catch (err) {
+    console.error(`${ERROR_ICON} ${errorRed('Failed to read/write .env for APP_KEY:')}`, err);
+    throw err;
+  }
+}
+
+// Utility: Copy only if destination does not exist
 function copyIfNotExists(src, dest) {
   if (!fs.existsSync(src)) {
     console.warn(`${WARNING_ICON} ${yellow('Source not found:')} ${gray(src)}`);
-    return;
+    return false;
   }
 
   if (!fs.existsSync(dest)) {
     fs.copyFileSync(src, dest);
     console.log(`${SUCCESS_ICON} ${FILE_ICON} ${green('Created:')} ${gray(dest)}`);
+    return true;
   } else {
     console.log(`${WARNING_ICON} ${gray('Already exists:')} ${gray(dest)}`);
+    return false;
   }
 }
 
@@ -47,14 +95,21 @@ function copyIfNotExists(src, dest) {
 console.log(`${CONFIG_ICON} ${purple('Initializing configuration files...')}`);
 
 try {
-  // Copy .env
+  // --- .env SETUP ---
   const envExample = path.join(semantqServerDir, '.env.example');
-  //const envFile = path.join(projectRoot, '.env');
   const envFile = path.join(semantqServerDir, '.env');
-  console.log(`${ENV_ICON} ${blue('Setting up environment:')}`);
-  copyIfNotExists(envExample, envFile);
 
-  // Copy config
+  console.log(`${ENV_ICON} ${blue('Setting up environment:')}`);
+  const envCreated = copyIfNotExists(envExample, envFile);
+
+  // Always attempt to inject/replace the key if the file exists
+  if (fs.existsSync(envFile)) {
+    // Inject the key on initial creation, or when forced
+    const shouldForce = forceKey || envCreated; 
+    injectOrReplaceAppKey(envFile, shouldForce);
+  }
+
+  // --- config SETUP ---
   const configExample = path.join(semantqServerDir, 'config', 'semantq.config.example.js');
   const configFile = path.join(semantqServerDir, 'semantq.config.js');
   console.log(`${CONFIG_ICON} ${blue('Setting up configuration:')}`);
