@@ -26,7 +26,7 @@ The first step is to establish your production database and allow the remote bac
     ```bash
     DATABASE_URL=mysql://dbuser:dbpassword@sharedIp_address/dbname
 
-    # Example: mysql://homestat_user:securepassword@169.797.000.11/homestat_db
+    # Example: mysql://some_user:securepassword@169.797.000.11/some_db
     ```
 
 ### 1.3 Configure Remote Database Access
