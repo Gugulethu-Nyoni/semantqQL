@@ -408,6 +408,7 @@ curl -X DELETE http://localhost:3000/user/users/1
 - [Semantq API Reference](docs/SemantqApi.md)
 - [Semantq Packages Guide](docs/SemantqPackages.md)
 - [Full Stack Semantq CRUD Guide](docs/Semantq_CRUD.md)
+- [Production Deployment Guide](docs/ProductionDeploymentGuide.md)
 
 ### Suggested Modules
 
