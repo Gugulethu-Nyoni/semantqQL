@@ -25,7 +25,17 @@ async function loadServerConfig() {
   try {
     await fs.access(configPath, fs.constants.R_OK);
     console.log(`[Config Loader] Using config at: ${configPath}`);
-    const { default: config } = await import(configUrl);
+    
+    // ✅ FIX: Properly handle the default export
+    const importedModule = await import(configUrl);
+    const config = importedModule.default || importedModule;
+    
+    console.log('[Config Loader] Config loaded successfully:', {
+      hasDatabase: !!config.database,
+      adapter: config.database?.adapter,
+      host: config.database?.config?.host
+    });
+    
     return config;
   } catch (err) {
     const errorMessage = `[Config Loader] Failed to load config from: ${configPath} – ${err.message}`;

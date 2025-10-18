@@ -83,11 +83,42 @@ console.log(`${CONFIG_ICON} ${cyan('Uploads directory set to:')} ${gray(UPLOAD_D
   const semantqConfig = await configPromise();
   console.log(`${SUCCESS_ICON} ${green('Configuration loaded successfully')}`);
 
+  // ✅ DEBUG: Check what's actually in the config
+  console.log('DEBUG - Full config structure:', Object.keys(semantqConfig));
+  console.log('DEBUG - Database config exists:', !!semantqConfig.database);
+
+  // ✅ SAFE ACCESS: Ensure database config exists
+  if (!semantqConfig.database) {
+    console.log(`${WARNING_ICON} ${yellow('Database config missing, creating default...')}`);
+    semantqConfig.database = {
+      adapter: 'mysql',
+      config: {
+        host: process.env.DB_MYSQL_HOST || 'localhost',
+        port: process.env.DB_MYSQL_PORT || 3306,
+        user: process.env.DB_MYSQL_USER || 'root',
+        password: process.env.DB_MYSQL_PASSWORD || 'my-secret-pw',
+        database: process.env.DB_MYSQL_NAME || 'botaniq',
+      }
+    };
+  }
+
+  // Now this should work safely
+  const selectedAdapter = semantqConfig.database.adapter;
+  console.log(`${MODULE_ICON} ${blue(`Initializing '${selectedAdapter}' adapter...`)}`);
+
   // ✓ CORS config using allowedOrigins from loaded config
+  // ✅ SAFE ACCESS: Check if allowedOrigins exists
+  const allowedOrigins = semantqConfig.allowedOrigins || [
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://gobotaniq.com',
+    'https://www.gobotaniq.com'
+  ];
+  
   app.use(cors({
    origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    if (semantqConfig.allowedOrigins.includes(origin)) {
+    if (allowedOrigins.includes(origin)) {
      return callback(null, true);
     } else {
      return callback(new Error(`CORS: Origin ${origin} not allowed`));
@@ -115,22 +146,18 @@ console.log(`${CONFIG_ICON} ${cyan('Uploads directory set to:')} ${gray(UPLOAD_D
   }
  
   // ⚠️ DYNAMIC ADAPTER INITIALIZATION
-  // This switch statement correctly initializes only the adapter specified in the config.
-  const selectedAdapter = semantqConfig.database.adapter;
-    console.log(`${MODULE_ICON} ${blue(`Initializing '${selectedAdapter}' adapter...`)}`);
-
-    switch (selectedAdapter) {
-        case 'supabase':
-            await supabaseAdapter.init(semantqConfig);
-            break;
-        case 'mysql':
-            // ✅ PASS THE DATABASE CONFIG ONLY, not the entire semantqConfig
-            await mysqlAdapter.init(semantqConfig.database.config);
-            break;
-        default:
-            console.log(`${WARNING_ICON} ${yellow(`No database adapter specified or unknown adapter '${selectedAdapter}'.`)}`);
-    }
-    console.log(`${SUCCESS_ICON} ${green('Database adapter initialized')}`);
+  switch (selectedAdapter) {
+    case 'supabase':
+        await supabaseAdapter.init(semantqConfig);
+        break;
+    case 'mysql':
+        // ✅ PASS THE DATABASE CONFIG ONLY, not the entire semantqConfig
+        await mysqlAdapter.init(semantqConfig.database.config);
+        break;
+    default:
+        console.log(`${WARNING_ICON} ${yellow(`No database adapter specified or unknown adapter '${selectedAdapter}'.`)}`);
+  }
+  console.log(`${SUCCESS_ICON} ${green('Database adapter initialized')}`);
 
   // Load core routes
   const coreRoutesPath = path.resolve(__dirname, 'routes');
