@@ -1,4 +1,4 @@
-// semantq_server/config_loader.js
+// semantqQL/config_loader.js
 
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
@@ -12,12 +12,16 @@ const __dirname = path.dirname(__filename);
 const configPath = path.join(__dirname, 'server.config.js');
 const configUrl = pathToFileURL(configPath).href;
 
+// Cache with file stats for smart invalidation
+let cachedConfig = null;
+let configStats = null;
+
 /**
  * Loads the Semantq configuration from the same directory.
  * @returns {Promise<object>} The loaded configuration object.
  * @throws {Error} If the config file is missing or unreadable.
  */
-async function loadSemantqConfig() {
+async function loadServerConfig() {
   try {
     await fs.access(configPath, fs.constants.R_OK);
     console.log(`[Config Loader] Using config at: ${configPath}`);
@@ -30,11 +34,38 @@ async function loadSemantqConfig() {
   }
 }
 
-// Cache the config after first load
-let cachedConfig = null;
+/**
+ * Check if config file has been modified since last load
+ */
+async function hasConfigChanged() {
+  try {
+    const stats = await fs.stat(configPath);
+    
+    if (!configStats) {
+      configStats = stats;
+      return true; // First load
+    }
+    
+    // Check if mtime (modification time) has changed
+    const hasChanged = stats.mtime.getTime() !== configStats.mtime.getTime();
+    if (hasChanged) {
+      configStats = stats;
+    }
+    return hasChanged;
+  } catch (err) {
+    // If we can't stat the file, assume it changed
+    return true;
+  }
+}
 
-export default (async () => {
-  if (cachedConfig) return cachedConfig;
-  cachedConfig = await loadSemantqConfig();
+export default async () => {
+  const configChanged = await hasConfigChanged();
+  
+  if (cachedConfig && !configChanged) {
+    return cachedConfig;
+  }
+  
+  // Reload config if it changed or doesn't exist
+  cachedConfig = await loadServerConfig();
   return cachedConfig;
-})();
+};
