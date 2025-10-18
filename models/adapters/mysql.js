@@ -22,18 +22,27 @@ const mysqlAdapter = {
     if (connectionPool) return connectionPool;
 
     const config = {
-      host: dbConfig.host || process.env.MYSQL_DB_HOST,
-      user: dbConfig.user || process.env.MYSQL_DB_USER,
-      password: dbConfig.password || process.env.MYSQL_DB_PASSWORD,
-      database: dbConfig.database || process.env.MYSQL_DB_NAME,
-      port: dbConfig.port || process.env.MYSQL_DB_PORT || 3306,
+      host: dbConfig.host || process.env.DB_MYSQL_HOST,
+      user: dbConfig.user || process.env.DB_MYSQL_USER,
+      password: dbConfig.password || process.env.DB_MYSQL_PASSWORD,
+      database: dbConfig.database || process.env.DB_MYSQL_NAME,
+      port: dbConfig.port || process.env.DB_MYSQL_PORT || 3306,
       waitForConnections: true,
-      connectionLimit: dbConfig.connectionLimit || 10,
+      connectionLimit: dbConfig.connectionLimit || process.env.DB_MYSQL_POOL_LIMIT || 10,
       queueLimit: 0
     };
 
+    // Debug log to see what config is being used
+    console.log(`${DB_ICON} ${blue('MySQL connection config:')}`, {
+      host: config.host,
+      port: config.port,
+      user: config.user,
+      database: config.database
+    });
+
     if (!config.host || !config.user || !config.database) {
       console.error(`${ERROR_ICON} ${red('Missing critical MySQL connection details')}`);
+      console.error(`${ERROR_ICON} ${red('Required: host, user, database')}`);
       throw new Error('Missing critical MySQL connection details');
     }
 

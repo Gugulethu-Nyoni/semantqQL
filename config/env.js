@@ -11,8 +11,8 @@ export function loadEnv() {
     console.log('Loaded environment variables from project root .env');
   } else if (fs.existsSync(localEnvPath)) {
     dotenv.config({ path: localEnvPath });
-    console.log('Loaded environment variables from local semantq_server/.env');
+    console.log('Loaded environment variables from local semantqQL/.env');
   } else {
-    console.warn('⚠️ No .env file found in project root or semantq_server folder');
+    console.warn('⚠️ No .env file found in project root or semantqQL folder');
   }
 }
