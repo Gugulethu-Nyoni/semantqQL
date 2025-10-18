@@ -1,82 +1,40 @@
-// models/adapters/mysql.js — Updated for consistent raw vs. prepared query support
-import mysql from 'mysql2/promise';
-import chalk from 'chalk';
+// semantqQL/server.config.js
 
-// Consistent with other files
-const green = chalk.hex('#6ef0b5');
-const red = chalk.hex('#ff4d4d');
-const yellow = chalk.hex('#f0e66e');
-const gray = chalk.hex('#aaaaaa');
-const blue = chalk.hex('#6ec7ff');
-
-// Icons
-const SUCCESS_ICON = green('✓');
-const ERROR_ICON = red('✗');
-const STOP_ICON = yellow('🛑');
-const DB_ICON = blue('🗄️');
-
-let connectionPool = null;
-
-const mysqlAdapter = {
-  async init(dbConfig) {
-    if (connectionPool) return connectionPool;
-
-    // CRITICAL FIX: Environment variables take PRIORITY over dbConfig
-    const config = {
-      host: process.env.DB_MYSQL_HOST || dbConfig.host, // ENV FIRST!
-      user: process.env.DB_MYSQL_USER || dbConfig.user, // ENV FIRST!
-      password: process.env.DB_MYSQL_PASSWORD || dbConfig.password, // ENV FIRST!
-      database: process.env.DB_MYSQL_NAME || dbConfig.database, // ENV FIRST!
-      port: process.env.DB_MYSQL_PORT || dbConfig.port || 3306, // ENV FIRST!
-      waitForConnections: true,
-      connectionLimit: process.env.DB_MYSQL_POOL_LIMIT || dbConfig.connectionLimit || 10,
-      queueLimit: 0
-    };
-
-    // Debug log to see what config is being used
-    console.log(`${DB_ICON} ${blue('MySQL connection config:')}`, {
-      host: config.host,
-      port: config.port,
-      user: config.user,
-      database: config.database,
-      source: 'env' // Indicates source
-    });
-
-    if (!config.host || !config.user || !config.database) {
-      console.error(`${ERROR_ICON} ${red('Missing critical MySQL connection details')}`);
-      console.error(`${ERROR_ICON} ${red('Required: host, user, database')}`);
-      throw new Error('Missing critical MySQL connection details');
-    }
-
-    try {
-      console.log(`${DB_ICON} ${blue('Initializing MySQL connection pool...')}`);
-      connectionPool = mysql.createPool(config);
-      await connectionPool.getConnection();
-      console.log(`${SUCCESS_ICON} ${green('MySQL connection pool initialized')}`);
-      return connectionPool;
-    } catch (error) {
-      console.error(`${ERROR_ICON} ${red('Failed to initialize MySQL pool:')}`, error);
-      throw error;
-    }
+export default {
+  database: {
+    adapter: 'mysql',
+    config: {
+      host: process.env.DB_MYSQL_HOST || 'localhost',
+      port: process.env.DB_MYSQL_PORT ? parseInt(process.env.DB_MYSQL_PORT) : 3306,
+      user: process.env.DB_MYSQL_USER || 'root',
+      password: process.env.DB_MYSQL_PASSWORD || 'db-pw',
+      database: process.env.DB_MYSQL_NAME || 'dbname',
+      connectionLimit: process.env.DB_MYSQL_POOL_LIMIT || 10,
+    },
   },
-
-  async query(sql, params = []) {
-    if (!connectionPool) throw new Error('MySQL pool not initialized.');
-    return await connectionPool.execute(sql, params); // prepared statement
+  server: {
+    port: process.env.PORT ? parseInt(process.env.PORT) : 3003,
   },
-
-  async raw(sql) {
-    if (!connectionPool) throw new Error('MySQL pool not initialized.');
-    return await connectionPool.query(sql); // allows raw, multi-statement execution (non-prepared)
+  packages: {
+    autoMount: true,
   },
-
-  async end() {
-    if (connectionPool) {
-      await connectionPool.end();
-      console.log(`${STOP_ICON} ${yellow('MySQL pool closed')}`);
-      connectionPool = null;
-    }
-  }
+  email: {
+    driver: process.env.EMAIL_DRIVER || 'resend',
+    resend_api_key: process.env.RESEND_API_KEY || 're_xxx',
+    email_from: process.env.EMAIL_FROM || 'noreply@sender.somewebsite.com',
+    email_from_name: process.env.EMAIL_FROM_NAME || 'Team Example',
+  },
+  brand: {
+    name: process.env.BRAND_NAME || 'Example',
+    support_email: process.env.BRAND_SUPPORT_EMAIL || 'support@example.com',
+    frontend_base_url: process.env.FRONTEND_BASE_URL || 'http://localhost:3000',
+  },
+  allowedOrigins: [
+    process.env.FRONTEND_BASE_URL,
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://gobotaniq.com',
+    'https://www.somewebsite.com'
+  ].filter(Boolean),
+  environment: process.env.NODE_ENV || 'development',
 };
-
-export default mysqlAdapter;
