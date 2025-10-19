@@ -1,40 +1,40 @@
-// semantq_server/config/semantq.config.example.js
+// semantqQL/config/semantq.config.example.js
 
 export default {
   database: {
     adapter: 'mysql',
     config: {
-      host: 'localhost',
-      port: 3306,
-      user: 'root',
-      password: 'bdpass',
-      database: 'dbname',
+      host: process.env.DB_MYSQL_HOST || 'localhost',
+      port: process.env.DB_MYSQL_PORT ? parseInt(process.env.DB_MYSQL_PORT) : 3306,
+      user: process.env.DB_MYSQL_USER || 'root',
+      password: process.env.DB_MYSQL_PASSWORD || 'db-pw',
+      database: process.env.DB_MYSQL_NAME || 'dbname',
+      connectionLimit: process.env.DB_MYSQL_POOL_LIMIT || 10,
     },
   },
   server: {
-    port: 3003,
+    port: process.env.PORT ? parseInt(process.env.PORT) : 3003,
   },
   packages: {
     autoMount: true,
   },
   email: {
-    driver: 'resend', // 'mailgun' | 'smtp' | 'mock'
-    resend_api_key: 're_xxx',
-    email_from: 'noreply@mailer.somedomain.com',
-    email_from_name: 'Support Team',
+    driver: process.env.EMAIL_DRIVER || 'resend',
+    resend_api_key: process.env.RESEND_API_KEY || 're_xxx',
+    email_from: process.env.EMAIL_FROM || 'noreply@sender.somewebsite.com',
+    email_from_name: process.env.EMAIL_FROM_NAME || 'Team Example',
   },
   brand: {
-    name: 'Brand_name',
-    support_email: 'support@brandname.com',
-    frontend_base_url: 'http://localhost:3000',
+    name: process.env.BRAND_NAME || 'Example',
+    support_email: process.env.BRAND_SUPPORT_EMAIL || 'support@example.com',
+    frontend_base_url: process.env.FRONTEND_BASE_URL || 'http://localhost:3000',
   },
-
   allowedOrigins: [
-    'http://localhost:5173', // for Vite
-    'http://localhost:3000', // if React or other dev server
-    'http://127.0.0.1:5173',
-    'http://127.0.0.1:3000'
-  ],
-    environment: 'production',
-
+    process.env.FRONTEND_BASE_URL,
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'https://gobotaniq.com',
+    'https://www.somewebsite.com'
+  ].filter(Boolean),
+  environment: process.env.NODE_ENV || 'development',
 };
