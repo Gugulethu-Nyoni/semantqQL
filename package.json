@@ -1,6 +1,6 @@
 {
   "name": "semantqQL",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "type": "module",
   "description": "Semantq full stack backend server with modular MCSR architecture",
   "main": "server.js",
@@ -12,7 +12,6 @@
     "env:copy": "cp .env.example .env",
     "migrate": "node bin/migrate.js",
     "models:manifest": "rm -f lib/models_manifest.js && node bin/generateModelsManifest.js"
-
   },
   "keywords": [
     "semantq",
@@ -26,14 +25,20 @@
   "license": "MIT",
   "dependencies": {
     "@prisma/client": "^6.11.1",
-    "@semantq/auth": "^1.0.9",
+    "bcrypt": "^6.0.0",
+    "bcryptjs": "^3.0.3",
     "body-parser": "^1.20.1",
+    "chalk": "^5.6.2",
     "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
+    "jsonwebtoken": "^9.0.3",
+    "mailgun-js": "^0.22.0",
     "multer": "^1.4.5-lts.1",
-    "mysql2": "^3.14.1"
+    "mysql2": "^3.14.1",
+    "nodemailer": "^7.0.12",
+    "resend": "^4.6.0"
   },
   "devDependencies": {
     "jest": "^29.5.0",
