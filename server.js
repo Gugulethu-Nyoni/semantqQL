@@ -14,7 +14,9 @@ import cookieParser from 'cookie-parser';
 import { fileURLToPath } from 'url';
 import chalk from 'chalk';
 
-// CLI Color palette
+// ============================================================================
+// CLI COLOR PALETTE
+// ============================================================================
 const purple = chalk.hex('#b56ef0');
 const purpleBright = chalk.hex('#d8a1ff');
 const blue = chalk.hex('#6ec7ff');
@@ -24,7 +26,9 @@ const errorRed = chalk.hex('#ff4d4d');
 const gray = chalk.hex('#aaaaaa');
 const cyan = chalk.hex('#6ef0e6');
 
-// Icons
+// ============================================================================
+// STATUS INDICATORS
+// ============================================================================
 const SUCCESS_ICON = green('✓');
 const WARNING_ICON = yellow('⚠');
 const ERROR_ICON = errorRed('✗');
@@ -34,25 +38,35 @@ const CONFIG_ICON = purpleBright('⚙️');
 const HEALTH_ICON = green('❤️');
 const SECURITY_ICON = green('🔒');
 
-// Import config loader
+// ============================================================================
+// CONFIGURATION LOADER
+// ============================================================================
 import configPromise from './config_loader.js';
 
-// Setup __dirname for ES module
+// ============================================================================
+// PATH CONFIGURATION
+// ============================================================================
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Init Express
+// ============================================================================
+// EXPRESS INITIALIZATION
+// ============================================================================
 const app = express();
 const PORT = process.env.PORT || 3003;
 
-// --- FILE UPLOAD (MULTER) CONFIGURATION ---
+// ============================================================================
+// FILE UPLOAD CONFIGURATION
+// ============================================================================
 const UPLOAD_DIR = path.join(__dirname, 'uploads');
 const uploadMiddleware = multer({ dest: UPLOAD_DIR });
 app.set('uploadMiddleware', uploadMiddleware); 
 
 console.log(`${CONFIG_ICON} ${cyan('Uploads directory set to:')} ${gray(UPLOAD_DIR)}`);
 
-// Helper to check if a path exists
+// ============================================================================
+// UTILITY FUNCTIONS
+// ============================================================================
 async function pathExists(p) {
     try {
         await fs.access(p);
@@ -62,11 +76,16 @@ async function pathExists(p) {
     }
 }
 
+// ============================================================================
+// MAIN APPLICATION BOOTSTRAP
+// ============================================================================
 (async () => {
   try {
     console.log(`${CONFIG_ICON} ${purpleBright('Loading configuration...')}`);
 
-    // Ensure the uploads directory exists
+    // ------------------------------------------------------------------------
+    // Ensure uploads directory exists
+    // ------------------------------------------------------------------------
     const dirExists = await pathExists(UPLOAD_DIR);
     if (!dirExists) {
       await fs.mkdir(UPLOAD_DIR, { recursive: true });
@@ -75,16 +94,20 @@ async function pathExists(p) {
       console.log(`${SUCCESS_ICON} ${green('Uploads directory already exists.')}`);
     }
 
-    /** * SURGICAL FIX: 
-     * Handles both cases: if config_loader exports a function OR a promise directly.
-     */
+    // ------------------------------------------------------------------------
+    // Load configuration
+    // ------------------------------------------------------------------------
     const semantqConfig = typeof configPromise === 'function' 
         ? await configPromise() 
         : await configPromise;
 
     console.log(`${SUCCESS_ICON} ${green('Configuration loaded successfully')}`);
 
-    // ✅ SAFE ACCESS: Ensure database config exists
+    // ------------------------------------------------------------------------
+    // Database configuration - Surgical fix for adapter compatibility
+    // ------------------------------------------------------------------------
+    const dbConfig = semantqConfig.database?._original || semantqConfig.database;
+    
     if (!semantqConfig.database) {
       console.log(`${WARNING_ICON} ${yellow('Database config missing, creating default...')}`);
       semantqConfig.database = {
@@ -102,7 +125,9 @@ async function pathExists(p) {
     const selectedAdapter = semantqConfig.database.adapter;
     console.log(`${MODULE_ICON} ${blue(`Initializing '${selectedAdapter}' adapter...`)}`);
 
-    // ✓ CORS config
+    // ------------------------------------------------------------------------
+    // CORS Configuration
+    // ------------------------------------------------------------------------
     const allowedOrigins = semantqConfig.allowedOrigins || [
       'http://localhost:5173',
       'http://localhost:3000',
@@ -124,10 +149,15 @@ async function pathExists(p) {
       credentials: true
     }));
 
+    // ------------------------------------------------------------------------
+    // Middleware
+    // ------------------------------------------------------------------------
     app.use(bodyParser.json());
     app.use(cookieParser());
 
-    // Health check
+    // ------------------------------------------------------------------------
+    // Health Check Endpoint
+    // ------------------------------------------------------------------------
     app.get('/', (req, res) => {
       res.json({ 
         status: 'Semantq Server is running',
@@ -137,36 +167,60 @@ async function pathExists(p) {
       });
     });
 
-    // ⚠️ DYNAMIC ADAPTER INITIALIZATION
-    switch (selectedAdapter) {
-      case 'supabase':
-        try {
-          const { default: supabaseAdapter } = await import('./models/adapters/supabase.js');
-          await supabaseAdapter.init(semantqConfig);
-          console.log(`${SUCCESS_ICON} ${green('Supabase adapter initialized successfully')}`);
-        } catch (error) {
-          console.error(`${ERROR_ICON} ${errorRed('Failed to initialize Supabase adapter:')} ${error.message}`);
-          process.exit(1);
-        }
-        break;
+    // ========================================================================
+    // DYNAMIC DATABASE ADAPTER INITIALIZATION
+    // ========================================================================
+    // SURGICAL FIX: Replaces hardcoded switch statement with dynamic imports
+    // This allows any adapter to be loaded simply by creating the file at:
+    // ./models/adapters/[adapter-name].js
+    // ========================================================================
+    
+    try {
+      // Dynamically construct the adapter path based on the selected adapter name
+      const adapterPath = `./models/adapters/${selectedAdapter}.js`;
+      
+      console.log(`${MODULE_ICON} ${gray(`Loading adapter from: ${adapterPath}`)}`);
+      
+      // Dynamic import of the adapter module
+      const { default: dbAdapter } = await import(adapterPath);
+      
+      // Initialize the adapter with the database configuration
+      await dbAdapter.init(semantqConfig.database.config);
+      
+      // Store the adapter instance on the app for routes to access
+      app.set('dbAdapter', dbAdapter);
+      app.set('dbType', selectedAdapter);
+      
+      console.log(`${SUCCESS_ICON} ${green(`${selectedAdapter} adapter initialized successfully`)}`);
+      
+    } catch (error) {
+      console.error(`${ERROR_ICON} ${errorRed(`Failed to initialize ${selectedAdapter} adapter:`)}`);
+      console.error(`${ERROR_ICON} ${errorRed(`Error: ${error.message}`)}`);
+      
+      // Provide helpful error messages for common adapters
+      if (error.code === 'ERR_MODULE_NOT_FOUND') {
+        console.error(`${ERROR_ICON} ${errorRed(`Adapter '${selectedAdapter}' not found at ./models/adapters/${selectedAdapter}.js`)}`);
+        console.error(`${WARNING_ICON} ${yellow('Please create the adapter or install the required package:')}`);
         
-      case 'mysql':
-        try {
-          const { default: mysqlAdapter } = await import('./models/adapters/mysql.js');
-          await mysqlAdapter.init(semantqConfig.database.config);
-          console.log(`${SUCCESS_ICON} ${green('MySQL adapter initialized successfully')}`);
-        } catch (error) {
-          console.error(`${ERROR_ICON} ${errorRed('Failed to initialize MySQL adapter:')} ${error.message}`);
-          process.exit(1);
+        if (selectedAdapter === 'postgresql') {
+          console.error(`${WARNING_ICON} ${yellow('  npm install pg')}`);
+        } else if (selectedAdapter === 'mysql') {
+          console.error(`${WARNING_ICON} ${yellow('  npm install mysql2')}`);
+        } else if (selectedAdapter === 'supabase') {
+          console.error(`${WARNING_ICON} ${yellow('  npm install @supabase/supabase-js')}`);
         }
-        break;
-        
-      default:
-        console.error(`${ERROR_ICON} ${errorRed(`Unknown database adapter: '${selectedAdapter}'`)}`);
-        process.exit(1);
+      }
+      
+      process.exit(1);
     }
 
+    // ========================================================================
+    // ROUTE LOADING
+    // ========================================================================
+    
+    // ------------------------------------------------------------------------
     // Load core routes
+    // ------------------------------------------------------------------------
     const coreRoutesPath = path.resolve(__dirname, 'routes');
     if (await pathExists(coreRoutesPath)) {
       console.log(`${MODULE_ICON} ${blue('Loading core routes from:')} ${gray(coreRoutesPath)}`);
@@ -174,7 +228,9 @@ async function pathExists(p) {
       console.log(`${SUCCESS_ICON} ${green('Core routes loaded successfully')}`);
     }
 
-    // Load routes from modules
+    // ------------------------------------------------------------------------
+    // Load module routes
+    // ------------------------------------------------------------------------
     console.log(`${MODULE_ICON} ${blue('Discovering Semantq modules...')}`);
     const moduleSources = await discoverSemantqModules();
     
@@ -188,7 +244,13 @@ async function pathExists(p) {
       }
     }
 
+    // ========================================================================
+    // ERROR HANDLING
+    // ========================================================================
+    
+    // ------------------------------------------------------------------------
     // Global error handler
+    // ------------------------------------------------------------------------
     app.use((err, req, res, next) => {
       console.error(`${ERROR_ICON} ${errorRed('Unhandled error:')}`, err.message);
       res.status(500).json({ 
@@ -197,15 +259,21 @@ async function pathExists(p) {
       });
     });
 
+    // ------------------------------------------------------------------------
     // 404 handler
+    // ------------------------------------------------------------------------
     app.use((req, res) => {
       res.status(404).json({ error: 'Route not found', path: req.path });
     });
 
+    // ========================================================================
+    // START SERVER
+    // ========================================================================
     app.listen(PORT, () => {
       console.log(`\n${SERVER_ICON} ${purpleBright('Semantq Server running on port:')} ${blue(PORT)}`);
       console.log(`${SECURITY_ICON} ${green('Automatic security enforced')}\n`);
     });
+    
   } catch (err) {
     console.error(`\n${ERROR_ICON} ${errorRed('Failed to initialize server:')}`, err);
     process.exit(1);
