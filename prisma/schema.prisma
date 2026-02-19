@@ -13,6 +13,7 @@ model User {
   name                          String?
   surname                       String?
   email                         String    @unique
+  username                      String?
   password_hash                 String
   is_verified                   Boolean   @default(false)
   verification_token            String?   @db.VarChar(512) // MODIFIED: Explicitly set length to 512
