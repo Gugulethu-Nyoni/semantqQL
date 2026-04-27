@@ -1,7 +1,10 @@
-// semantqQL/config_loader.js
 import path from 'path';
 import { fileURLToPath, pathToFileURL } from 'url';
 import fs from 'fs/promises';
+import dotenv from 'dotenv';
+
+// Load .env file
+dotenv.config();
 
 // Get the directory of this file
 const __filename = fileURLToPath(import.meta.url);
@@ -23,17 +26,17 @@ async function loadServerConfig() {
   try {
     await fs.access(configPath, fs.constants.R_OK);
     
-    // ✅ Use a timestamp to bypass the ESM import cache if the file has changed
+    // Use a timestamp to bypass the ESM import cache if the file has changed
     const timestamp = Date.now();
     const freshConfigUrl = `${configUrl}?t=${timestamp}`;
     
     const importedModule = await import(freshConfigUrl);
     
-    // ✅ Extract the default export correctly
+    // Extract the default export correctly
     const rawConfig = importedModule.default || importedModule;
     
-    // ✅ SURGICAL FIX: Transform config for adapter compatibility
-    // This preserves your original config structure while making it work with the adapter system
+    // Transform config for adapter compatibility
+    // This preserves the original config structure while making it work with the adapter system
     const config = { ...rawConfig };
     
     if (rawConfig.database && rawConfig.database.connections) {
@@ -56,12 +59,13 @@ async function loadServerConfig() {
       }
     }
     
-    // ✅ MOVED LOGGING AFTER SURGICAL FIX
     console.log('[Config Loader] Config loaded successfully:', {
       hasDatabase: !!config.database,
-      adapter: config.database?.adapter,      // Now shows 'postgresql'
-      host: config.database?.config?.host,    // Now shows the host
-      hasLogistics: !!config.logistics
+      adapter: config.database?.adapter,
+      host: config.database?.config?.host,
+      hasLogistics: !!config.logistics,
+      hasEmail: !!config.email,
+      emailFrom: config.email?.email_from,
     });
     
     return config;
@@ -81,7 +85,7 @@ async function hasConfigChanged() {
     
     if (!configStats) {
       configStats = stats;
-      return true; // First load
+      return true;
     }
     
     const hasChanged = stats.mtime.getTime() !== configStats.mtime.getTime();
@@ -90,7 +94,7 @@ async function hasConfigChanged() {
     }
     return hasChanged;
   } catch (err) {
-    return true; // Assume changed on error
+    return true;
   }
 }
 
