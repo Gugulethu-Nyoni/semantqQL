@@ -16,16 +16,15 @@ export default {
       postgres: {
         adapter: 'postgresql',
         config: {
-          host: process.env.DB_POSTGRES_HOST || 'dummy-postgres-host',
+          host: process.env.DB_POSTGRES_HOST || 'localhost',
           port: process.env.DB_POSTGRES_PORT ? parseInt(process.env.DB_POSTGRES_PORT) : 54320,
-          user: process.env.DB_POSTGRES_USER || 'dummy_user',
-          password: process.env.DB_POSTGRES_PASSWORD || 'dummy_password',
-          database: process.env.DB_POSTGRES_NAME || 'dummy_db',
+          user: process.env.DB_POSTGRES_USER || 'postgres',
+          password: process.env.DB_POSTGRES_PASSWORD || 'my_password',
+          database: process.env.DB_POSTGRES_NAME || 'lymbus',
           schema: process.env.DB_POSTGRES_SCHEMA || 'public',
           ssl: process.env.DB_POSTGRES_SSL === 'true' ? { rejectUnauthorized: false } : false,
           connectionLimit: process.env.DB_POSTGRES_POOL_LIMIT ? parseInt(process.env.DB_POSTGRES_POOL_LIMIT) : 10,
-          idleTimeoutMillis: 30000,
-        },
+          idleTimeoutMillis: 30000,        },
       },
     },
   },
@@ -100,14 +99,14 @@ export default {
     driver: process.env.EMAIL_DRIVER || 'resend',
     debug: process.env.EMAIL_DEBUG === 'true',
     resend_api_key: process.env.RESEND_API_KEY || 'dummy_resend_key',
-    email_from: process.env.EMAIL_FROM || 'dummy@example.com',
-    email_from_name: process.env.EMAIL_FROM_NAME || 'Dummy Sender',
+    email_from: process.env.EMAIL_FROM || 'noreply@sender.formiquejs.com',
+    email_from_name: process.env.EMAIL_FROM_NAME || 'Lymbus',
   },
   
   brand: {
-    name: process.env.BRAND_NAME || 'Dummy Brand',
-    support_email: process.env.BRAND_SUPPORT_EMAIL || 'support@dummy.com',
-    admin_notifications: process.env.ADMIN_NOTIFICATIONS_EMAIL || 'admin@dummy.com',
+    name: process.env.BRAND_NAME || 'Semantq Academy',
+    support_email: process.env.BRAND_SUPPORT_EMAIL || 'funda@semantq.com',
+    admin_notifications: process.env.ADMIN_NOTIFICATIONS_EMAIL || 'notifications@semantq.com',
     frontend_base_url: process.env.FRONTEND_BASE_URL || 'http://localhost:5173',
   },
   
@@ -117,8 +116,8 @@ export default {
     .concat([
       'http://localhost:5173',
       'http://localhost:3000',
-      'https://gobotaniq.com',
-      'https://www.gobotaniq.com'
+      'https://semantq.com',
+      'https://www.semantq.com'
     ]),
     
   environment: process.env.NODE_ENV || 'development',

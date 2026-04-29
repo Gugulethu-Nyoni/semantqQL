@@ -53,7 +53,11 @@ const excluded = [
     'PricingPackage', 
     'PricingPackageFeature', 
     'Metering', 
-    'User'
+    'Organization',
+    'User',
+    'Role',
+    'PackagePayment',
+    'ApiKey'
 ];
 
 const manifest = createModelManifest(excluded);
